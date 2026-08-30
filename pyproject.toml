@@ -1,0 +1,24 @@
+[project]
+name = "doujinshi-tag-getter"
+version = "0.1.0"
+description = "CLI tool to crawl tag metadata from Bika and JMComic"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27.0",
+    "jmcomic>=2.7.0",
+    "typer>=0.12.0",
+]
+
+[project.scripts]
+dtg = "doujinshi_tag_getter.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/doujinshi_tag_getter"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/doujinshi_tag_getter" = "doujinshi_tag_getter"
