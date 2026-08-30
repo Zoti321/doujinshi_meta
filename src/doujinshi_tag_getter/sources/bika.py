@@ -31,8 +31,12 @@ class BikaClient:
         self._email = email
         self._password = password
         self._token: str | None = None
-        proxies = {"http://": proxy, "https://": proxy} if proxy else None
-        self._client = httpx.Client(base_url=API_BASE, timeout=15.0, proxies=proxies)
+        # httpx>=0.28: use `proxy=` (str URL); `proxies=` dict was removed
+        self._client = httpx.Client(
+            base_url=API_BASE,
+            timeout=15.0,
+            proxy=proxy,
+        )
 
     def close(self) -> None:
         self._client.close()

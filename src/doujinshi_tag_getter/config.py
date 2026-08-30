@@ -76,7 +76,6 @@ def require_bika_credentials() -> tuple[str, str]:
     return email, password
 
 
-def proxy_to_httpx(proxy: str | None) -> dict[str, str] | None:
-    if not proxy:
-        return None
-    return {"http://": proxy, "https://": proxy}
+def proxy_to_httpx(proxy: str | None) -> str | None:
+    """Return proxy URL for httpx.Client(proxy=...), or None for direct."""
+    return proxy or None
