@@ -18,9 +18,14 @@ uv run dtg fetch --source jmcomic --ids 410090
 # 禁漫：构建 tag 词表（耗时长，建议 --checkpoint）
 uv run dtg catalog --source jmcomic --limit 10
 
-# 哔咔（需环境变量 + 可选代理）
+# 哔咔：可直接运行；无环境变量时会提示输入账号密码
+uv run dtg fetch --source bika --ids YOUR_COMIC_ID
+
+# 或预先设置环境变量（适合 CI / 脚本）
 export DTG_BIKA_EMAIL=...
 export DTG_BIKA_PASSWORD=...
+
+# 国内直连失败时再配代理
 uv run dtg config set proxy http://127.0.0.1:7890
 uv run dtg fetch --source bika --ids YOUR_COMIC_ID
 

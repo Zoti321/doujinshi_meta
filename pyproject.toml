@@ -22,3 +22,8 @@ packages = ["src/doujinshi_tag_getter"]
 
 [tool.hatch.build.targets.wheel.sources]
 "src/doujinshi_tag_getter" = "doujinshi_tag_getter"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

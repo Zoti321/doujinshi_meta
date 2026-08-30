@@ -1,29 +1,44 @@
 # 凭证与代理
 
-> 对应 ticket：[代理与哔咔凭证本地管理方案](../.wayfinder/tickets/007-grilling-credentials-proxy.md)
+> 对应 ticket：[代理与哔咔凭证本地管理方案](../.wayfinder/tickets/007-grilling-credentials-proxy.md)  
+> 调研依据：[pica-cli 哔咔认证与代理调研](./research/pica-cli-bika-auth.md)
 
-## 哔咔账号：环境变量
+## 哔咔：用户凭证
 
-**禁止**将账号写入仓库或配置文件。运行时从环境变量读取：
+**禁止**将账号写入仓库或配置文件。解析顺序：
 
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `DTG_BIKA_EMAIL` | 哔咔命令时 ✅ | 登录邮箱 |
-| `DTG_BIKA_PASSWORD` | 哔咔命令时 ✅ | 登录密码 |
+1. 环境变量 `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`（两者均非空则直接使用）
+2. 否则在交互终端提示手动输入（密码使用 `getpass` 掩码）
+3. 非交互且无 env（如管道 EOF）→ 报错退出
 
-流程：读取变量 → `POST /auth/sign-in` → token 内存持有（可选用户目录缓存）→ 401 重登。
+| 变量 | 说明 |
+|------|------|
+| `DTG_BIKA_EMAIL` | 登录邮箱（可选；缺失则提示输入） |
+| `DTG_BIKA_PASSWORD` | 登录密码（可选；缺失则提示输入） |
+
+用户 **只需** 提供上述两项。`api-key`、HMAC 签名密钥、App 模拟头等 **客户端常量** 由代码内置，无需用户配置（参见 [`CONTEXT.md`](../CONTEXT.md)）。
+
+流程：解析凭证 → `POST /auth/sign-in` → token **内存持有** → 401 自动重登。
 
 禁漫 **不需要** 账号。
 
 ```bash
+# 方式 A：环境变量
 export DTG_BIKA_EMAIL="your@email.com"
 export DTG_BIKA_PASSWORD="your-password"
 uv run dtg fetch --source bika --ids abc123
+
+# 方式 B：直接运行，按提示输入
+uv run dtg fetch --source bika --ids abc123
 ```
+
+> **Token 缓存**：首版不持久化，每次进程启动重新 login；全量爬取阶段若需减少 login 频率，再考虑可选用户目录缓存。
 
 ---
 
-## 代理：默认不使用
+## 代理：默认不使用（非 API 必填）
+
+代理 **不是** 哔咔 API 调用的逻辑前提，而是 **网络可达性** 兜底：当运行环境无法直连 `picaapi.picacomic.com` 时，用户手动启用。
 
 | 原则 | 说明 |
 |------|------|
@@ -31,19 +46,22 @@ uv run dtg fetch --source bika --ids abc123
 | **手动启用** | 用户通过配置接口显式设置后才走代理 |
 | **jmcomic** | 传入 `proxies=None`，覆盖库默认的 `system` 行为 |
 
-### 不用代理时
+### 直连时的网络现实
 
-| 场景 | 结果 |
-|------|------|
+| 场景 | 典型结果 |
+|------|----------|
 | 禁漫（`api`） | 国内多数情况正常 |
-| 哔咔（国内） | 常失败；需用户 **主动配置代理** 后重试 |
-| 已开全局 VPN | 可能直连成功（视 VPN 路由） |
+| 哔咔 + 国内本地 Windows | **可能**失败；失败时配置代理或开 VPN 后重试 |
+| 哔咔 + 全局 VPN / 海外 runner | 常可直连成功 |
+| 已配置 `--proxy` / `DTG_PROXY` | 走用户指定代理 |
+
+连接失败且 `resolve_proxy()` 为 `None` 时，stderr 提示可 `dtg config set proxy ...` 或 `--proxy`——这是环境建议，不是 API 契约要求。
 
 ---
 
 ## 代理配置接口
 
-用户 **手动设置** 后生效；支持三种方式，优先级 **高 → 低**：
+用户 **手动设置** 后生效；优先级 **高 → 低**：
 
 | 优先级 | 方式 | 示例 |
 |--------|------|------|
@@ -123,7 +141,6 @@ def resolve_proxy(
     return os.environ.get("DTG_PROXY") or None
 ```
 
-- 哔咔连接失败且 `resolve_proxy()` 为 `None` 时，stderr 提示：可 `dtg config set proxy ...` 或 `--proxy`
 - 日志永不打印密码；代理 URL 可打印（无敏感信息）
 
 ---
@@ -132,7 +149,10 @@ def resolve_proxy(
 
 | 项 | 决定 |
 |----|------|
-| 默认 | **不使用代理**，直连 |
+| 用户凭证 | `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`；缺失时交互提示输入 |
+| 客户端常量 | 硬编码于 `bika.py`；密钥轮换时改代码或后续加 `DTG_BIKA_SECRET_KEY` 覆盖 |
+| Token | 首版内存持有，401 重登；持久化缓存延后 |
+| 代理 | **非 API 必填**；默认直连，手动启用 |
 | 配置接口 | `dtg config set/unset/show` + `config.toml` + `--proxy` / `--no-proxy` + `DTG_PROXY` |
 | 系统 `HTTPS_PROXY` | **不自动继承**（避免无意走代理） |
-| 哔咔凭证 | `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD` |
+| 主要运行环境 | 国内本地 Windows；失败时再配代理 |

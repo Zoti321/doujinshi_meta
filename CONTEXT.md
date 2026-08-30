@@ -35,3 +35,20 @@
 
 - **全量（catalog）**：枚举本子 → 内存聚合 tag 词表 → 输出 JSON
 - **按需（fetch）**：指定 ID → 输出每本 tag 列表 JSON
+
+## 哔咔：用户凭证（User Credentials）
+
+用户需提供的秘密信息，仅 **邮箱 + 密码**。优先读环境变量 `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`；缺失时在交互终端提示手动输入。
+_Avoid_: 账号 token、api-key、签名密钥（这些不是用户配置项）
+
+## 哔咔：客户端常量（Client Constants）
+
+模拟官方 App 所需的固定值，硬编码于客户端（如 `api-key`、HMAC `secret_key`、App 请求头）。
+用户无需、也不应配置；若密钥轮换，通过更新客户端代码或高级环境变量覆盖。
+_Avoid_: 凭证、用户秘密
+
+## 网络可达性 / 代理（Network Reachability）
+
+代理 **不是** 哔咔 API 的逻辑前提，而是当运行环境无法直连 `picaapi.picacomic.com` 时的可选兜底。
+默认直连；国内本地 Windows 环境常需手动配置代理或依赖 VPN。
+_Avoid_: 刚需代理、API 必填项
