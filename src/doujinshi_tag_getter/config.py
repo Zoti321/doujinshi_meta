@@ -65,6 +65,30 @@ def resolve_proxy(
     return os.environ.get("DTG_PROXY") or None
 
 
+def password_input_broken() -> bool:
+    """True when getpass cannot read keystrokes (Git Bash / mintty on Windows).
+
+    On Win32, ``getpass`` uses ``msvcrt.getwch()``, which only sees the Windows
+    console — not mintty/MSYS PTYs. Typing appears to do nothing after the
+    password prompt.
+    """
+    if os.environ.get("MSYSTEM"):
+        return True
+    if os.environ.get("TERM_PROGRAM", "").lower() == "mintty":
+        return True
+    return False
+
+
+def _default_get_password(message: str) -> str:
+    if password_input_broken():
+        print(
+            "（当前终端无法隐藏密码输入，输入将可见）",
+            file=sys.stderr,
+        )
+        return input(message)
+    return getpass.getpass(message)
+
+
 def require_bika_credentials(
     *,
     prompt: Callable[[str], str] | None = None,
@@ -73,10 +97,11 @@ def require_bika_credentials(
     """Resolve Bika user credentials: env first, then interactive prompt.
 
     Env vars ``DTG_BIKA_EMAIL`` / ``DTG_BIKA_PASSWORD`` win when both are
-    non-empty. Otherwise prompt for missing fields (password is masked).
+    non-empty. Otherwise prompt for missing fields (password is masked when
+    the terminal supports it).
     """
     ask = prompt or (lambda message: input(message))
-    ask_password = get_password or (lambda message: getpass.getpass(message))
+    ask_password = get_password or _default_get_password
 
     email = (os.environ.get("DTG_BIKA_EMAIL") or "").strip()
     password = os.environ.get("DTG_BIKA_PASSWORD") or ""
