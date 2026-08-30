@@ -16,14 +16,28 @@ SECRET_KEY = r"~d}$Q7$eIni=V)9\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn`"
 DEFAULT_HEADERS = {
     "api-key": API_KEY,
     "accept": "application/vnd.picacomic.com.v1+json",
-    "app-channel": "1",
+    "app-channel": "2",
     "app-version": "2.2.1.2.3.3",
-    "app-build-version": "44",
+    "app-build-version": "45",
     "app-platform": "android",
     "app-uuid": "defaultUuid",
     "User-Agent": "okhttp/3.8.1",
     "image-quality": "original",
 }
+
+
+def _parse_api_payload(payload: dict[str, Any], *, context: str) -> dict[str, Any]:
+    if payload.get("code") != 200:
+        raise RuntimeError(payload.get("message") or f"bika {context} failed")
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        if context == "login":
+            raise RuntimeError(
+                "哔咔登录失败，请检查账号/密码；"
+                "若账号无误，可尝试 `dtg config set proxy ...` 或 `--proxy`"
+            )
+        raise RuntimeError(f"bika {context} response missing data")
+    return data
 
 
 class BikaClient:
@@ -74,9 +88,7 @@ class BikaClient:
             response = self._client.request(method, path, headers=headers, **kwargs)
         response.raise_for_status()
         payload = response.json()
-        if payload.get("code") != 200:
-            raise RuntimeError(payload.get("message", "bika api error"))
-        return payload["data"]
+        return _parse_api_payload(payload, context="api request")
 
     def login(self) -> None:
         path = "auth/sign-in"
@@ -89,9 +101,14 @@ class BikaClient:
         )
         response.raise_for_status()
         payload = response.json()
-        if payload.get("code") != 200:
-            raise RuntimeError(payload.get("message", "bika login failed"))
-        self._token = payload["data"]["token"]
+        data = _parse_api_payload(payload, context="login")
+        token = data.get("token")
+        if not token:
+            raise RuntimeError(
+                "哔咔登录失败，请检查账号/密码；"
+                "若账号无误，可尝试 `dtg config set proxy ...` 或 `--proxy`"
+            )
+        self._token = token
 
     def get_comic(self, comic_id: str) -> dict[str, Any]:
         if not self._token:
