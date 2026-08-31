@@ -121,6 +121,7 @@ uv tool install .
 # 功能 1：构建 tag 词表
 dtg catalog --source jmcomic
 dtg catalog --source bika -o bika-tags.json
+dtg catalog --source jmcomic --table   # 人类可读表格；默认 JSON 为集成契约
 
 # 功能 2：爬取本子 tag
 dtg fetch --source jmcomic --ids 410090,427413
@@ -144,6 +145,7 @@ dtg --no-proxy catalog --source bika
 | 选项 | 说明 |
 |------|------|
 | `-o, --output` | 写文件；省略则 stdout |
+| `--table` | （仅 `catalog`）stdout 打印 `kind`/`name`/`count` 表格；与 `-o` 互斥；**非** JSON 契约 |
 | `--proxy` | 单次 HTTP 代理 URL；默认不使用代理 |
 | `--no-proxy` | 强制直连，忽略 `config.toml` / `DTG_PROXY` |
 | `--config` | 配置文件路径（默认见 `docs/credentials.md`） |

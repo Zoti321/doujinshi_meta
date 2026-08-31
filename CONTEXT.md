@@ -25,6 +25,12 @@
 - `TagCatalogResponse` — 功能 1
 - `FetchTagsResponse` — 功能 2（单本/批量 tag，由调用方决定是否缓存）
 
+## 表格视图（Table View）
+
+`dtg catalog --table` 时 CLI 在 stdout 打印人类可读表格（`kind` / `name` / `count`），仅供终端浏览。
+**不属于**输出契约；Flutter / 脚本集成仍只依赖 JSON 契约。
+_Avoid_: 表格输出、pretty 输出（作契约名）
+
 ## 集成方式
 
 - **CLI 子进程**：Flutter / 其他项目调用 `dtg` 命令，解析 JSON

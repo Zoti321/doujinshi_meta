@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from rich.console import Console
+from rich.table import Table
 
 from doujinshi_tag_getter.catalog import build_catalog
 from doujinshi_tag_getter.config import (
@@ -21,7 +23,7 @@ from doujinshi_tag_getter.config import (
     save_config,
 )
 from doujinshi_tag_getter.fetch import fetch_tags
-from doujinshi_tag_getter.models import Source
+from doujinshi_tag_getter.models import Source, TagCatalogResponse
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, name="dtg")
 config_app = typer.Typer(no_args_is_help=True, help="持久配置")
@@ -40,6 +42,16 @@ def _write_json(data: dict, output: Path | None) -> None:
         output.write_text(text + "\n", encoding="utf-8")
     else:
         sys.stdout.write(text + "\n")
+
+
+def _write_catalog_table(result: TagCatalogResponse) -> None:
+    table = Table()
+    table.add_column("kind")
+    table.add_column("name")
+    table.add_column("count", justify="right")
+    for entry in result.tags:
+        table.add_row(entry.kind, entry.name, str(entry.count))
+    Console().print(table)
 
 
 def _config_path(config: Path | None) -> Path | None:
@@ -111,6 +123,11 @@ def fetch_cmd(
 def catalog_cmd(
     source: SourceOption = typer.Option(..., "--source", help="来源站"),
     output: Optional[Path] = typer.Option(None, "-o", "--output", help="写入 JSON 文件"),
+    table: bool = typer.Option(
+        False,
+        "--table",
+        help="人类可读表格（kind/name/count）；默认 JSON 为集成契约",
+    ),
     proxy: Optional[str] = typer.Option(None, "--proxy", help="单次 HTTP 代理"),
     no_proxy: bool = typer.Option(False, "--no-proxy", help="强制直连"),
     delay: Optional[float] = typer.Option(None, "--delay", help="详情请求间隔（秒）"),
@@ -120,6 +137,10 @@ def catalog_cmd(
     config: Optional[Path] = typer.Option(None, "--config", help="配置文件路径"),
 ) -> None:
     """全量爬取并构建 tag 词表。"""
+    if table and output is not None:
+        typer.echo("--table 与 -o/--output 不能同时使用", err=True)
+        raise typer.Exit(code=2)
+
     try:
         result = build_catalog(
             Source(source.value),
@@ -134,7 +155,10 @@ def catalog_cmd(
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=2) from exc
 
-    _write_json(result.to_dict(), output)
+    if table:
+        _write_catalog_table(result)
+    else:
+        _write_json(result.to_dict(), output)
     if result.stats.errors and result.stats.albums_scanned == 0:
         raise typer.Exit(code=2)
 

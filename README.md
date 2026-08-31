@@ -18,6 +18,9 @@ uv run dtg fetch --source jmcomic --ids 410090
 # 禁漫：构建 tag 词表（耗时长，建议 --checkpoint）
 uv run dtg catalog --source jmcomic --limit 10
 
+# 终端浏览词表（人类可读表格；默认仍是 JSON 契约）
+uv run dtg catalog --source jmcomic --limit 10 --table
+
 # 哔咔：可直接运行；无环境变量时会提示输入账号密码（成功后自动保存）
 uv run dtg fetch --source bika --ids YOUR_COMIC_ID
 
