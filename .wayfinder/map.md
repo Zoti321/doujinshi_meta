@@ -37,7 +37,7 @@ status: open
 
 ## 地图状态
 
-**规划已完成**（003 为可选环境自测）。可开始实现。
+**规划已完成**（003 为可选环境自测）。008（代理提示修正 / 客户端清理）已关闭。
 
 ## Out of scope
 
@@ -56,3 +56,4 @@ status: open
 | [全量爬取遍历与限速策略](tickets/005-grilling-full-crawl-strategy.md) | grilling | closed | — |
 | [按需爬取 CLI 接口形态](tickets/006-grilling-on-demand-cli.md) | grilling | closed | — |
 | [代理与哔咔凭证本地管理方案](tickets/007-grilling-credentials-proxy.md) | grilling | closed | — |
+| [修正哔咔代理提示、清理死代码并回滚 App 头](tickets/008-fix-proxy-hint-client-cleanup.md) | task | closed | — |

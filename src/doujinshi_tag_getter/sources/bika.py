@@ -16,9 +16,9 @@ SECRET_KEY = r"~d}$Q7$eIni=V)9\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn`"
 DEFAULT_HEADERS = {
     "api-key": API_KEY,
     "accept": "application/vnd.picacomic.com.v1+json",
-    "app-channel": "2",
+    "app-channel": "1",
     "app-version": "2.2.1.2.3.3",
-    "app-build-version": "45",
+    "app-build-version": "44",
     "app-platform": "android",
     "app-uuid": "defaultUuid",
     "User-Agent": "okhttp/3.8.1",
@@ -32,18 +32,26 @@ def _parse_api_payload(payload: dict[str, Any], *, context: str) -> dict[str, An
     data = payload.get("data")
     if not isinstance(data, dict):
         if context == "login":
-            raise RuntimeError(
-                "哔咔登录失败，请检查账号/密码；"
-                "若账号无误，可尝试 `dtg config set proxy ...` 或 `--proxy`"
-            )
+            raise RuntimeError("哔咔登录失败，请检查账号/密码")
         raise RuntimeError(f"bika {context} response missing data")
     return data
+
+
+PROXY_HINT = "可尝试 `dtg config set proxy ...` 或 `--proxy`"
+
+
+def _network_error_message(exc: BaseException, *, proxy: str | None) -> str:
+    base = f"哔咔网络连接失败: {exc}"
+    if proxy:
+        return base
+    return f"{base}；{PROXY_HINT}"
 
 
 class BikaClient:
     def __init__(self, email: str, password: str, proxy: str | None = None) -> None:
         self._email = email
         self._password = password
+        self._proxy = proxy
         self._token: str | None = None
         # httpx>=0.28: use `proxy=` (str URL); `proxies=` dict was removed
         self._client = httpx.Client(
@@ -81,11 +89,16 @@ class BikaClient:
         if "?" in sign_path:
             pass
         headers = self._headers(method, sign_path, auth=auth)
-        response = self._client.request(method, path, headers=headers, **kwargs)
-        if response.status_code == 401 and auth:
-            self.login()
-            headers = self._headers(method, sign_path, auth=True)
+        try:
             response = self._client.request(method, path, headers=headers, **kwargs)
+            if response.status_code == 401 and auth:
+                self.login()
+                headers = self._headers(method, sign_path, auth=True)
+                response = self._client.request(method, path, headers=headers, **kwargs)
+        except httpx.RequestError as exc:
+            raise RuntimeError(
+                _network_error_message(exc, proxy=self._proxy)
+            ) from exc
         response.raise_for_status()
         payload = response.json()
         return _parse_api_payload(payload, context="api request")
@@ -94,20 +107,22 @@ class BikaClient:
         path = "auth/sign-in"
         headers = self._headers("POST", path, auth=False)
         headers["Content-Type"] = "application/json; charset=UTF-8"
-        response = self._client.post(
-            path,
-            headers=headers,
-            json={"email": self._email, "password": self._password},
-        )
+        try:
+            response = self._client.post(
+                path,
+                headers=headers,
+                json={"email": self._email, "password": self._password},
+            )
+        except httpx.RequestError as exc:
+            raise RuntimeError(
+                _network_error_message(exc, proxy=self._proxy)
+            ) from exc
         response.raise_for_status()
         payload = response.json()
         data = _parse_api_payload(payload, context="login")
         token = data.get("token")
         if not token:
-            raise RuntimeError(
-                "哔咔登录失败，请检查账号/密码；"
-                "若账号无误，可尝试 `dtg config set proxy ...` 或 `--proxy`"
-            )
+            raise RuntimeError("哔咔登录失败，请检查账号/密码")
         self._token = token
 
     def get_comic(self, comic_id: str) -> dict[str, Any]:

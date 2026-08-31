@@ -127,8 +127,3 @@ def require_bika_credentials(
     if not email or not password:
         raise RuntimeError("哔咔邮箱与密码不能为空")
     return email, password
-
-
-def proxy_to_httpx(proxy: str | None) -> str | None:
-    """Return proxy URL for httpx.Client(proxy=...), or None for direct."""
-    return proxy or None

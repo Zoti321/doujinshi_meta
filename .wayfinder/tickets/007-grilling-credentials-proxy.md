@@ -22,5 +22,5 @@ blocks: []
 
 详见 [`docs/credentials.md`](../../docs/credentials.md)。
 
-- 哔咔：`DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD` 环境变量注入；运行时 login，token 可选本地缓存
+- 哔咔凭证：优先 `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`；缺失时在交互终端提示输入；非交互且无 env 则报错。运行时 login；**token 首版仅内存持有，持久化缓存延后**
 - 代理：**非全局必须**；**默认不使用**；`dtg config set proxy` / `--proxy` / `DTG_PROXY` 手动启用

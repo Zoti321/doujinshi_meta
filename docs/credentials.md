@@ -55,7 +55,13 @@ uv run dtg fetch --source bika --ids abc123
 | 哔咔 + 全局 VPN / 海外 runner | 常可直连成功 |
 | 已配置 `--proxy` / `DTG_PROXY` | 走用户指定代理 |
 
-连接失败且 `resolve_proxy()` 为 `None` 时，stderr 提示可 `dtg config set proxy ...` 或 `--proxy`——这是环境建议，不是 API 契约要求。
+### 失败提示规则
+
+| 失败类型 | 条件 | 用户可见提示 |
+|----------|------|--------------|
+| **网络连接失败**（如无法连通 API、超时） | 当前为直连（未配置 proxy） | 错误信息含可操作建议：`dtg config set proxy ...` 或 `--proxy`（环境建议，非 API 必填） |
+| **网络连接失败** | 已配置非空 proxy | 报告连接失败，**不再**主推「去设代理」 |
+| **登录/鉴权失败**（错误密码、`code=200` 但缺 `data`/`token` 等） | 任意 | 聚焦账号/密码；**不**把「去设代理」作为主建议 |
 
 ---
 
@@ -153,6 +159,7 @@ def resolve_proxy(
 | 客户端常量 | 硬编码于 `bika.py`；密钥轮换时改代码或后续加 `DTG_BIKA_SECRET_KEY` 覆盖 |
 | Token | 首版内存持有，401 重登；持久化缓存延后 |
 | 代理 | **非 API 必填**；默认直连，手动启用 |
+| 失败提示 | 直连+网络失败 → 提示配置代理；已设代理或登录/鉴权失败 → 不主推「去设代理」 |
 | 配置接口 | `dtg config set/unset/show` + `config.toml` + `--proxy` / `--no-proxy` + `DTG_PROXY` |
 | 系统 `HTTPS_PROXY` | **不自动继承**（避免无意走代理） |
 | 主要运行环境 | 国内本地 Windows；失败时再配代理 |
