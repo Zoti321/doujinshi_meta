@@ -267,7 +267,7 @@ signature = hex( HMAC-SHA256( key=secret_key, message=raw.lower() ) )
 
 | 版本 | secret_key | 来源 |
 |---|---|---|
-| **当前主流** | `~d}$Q7$eIni=V)9\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn` | [PicaComicInherent.kt](https://github.com/czp3009/picacomic-api/blob/master/src/main/kotlin/com/hiczp/picacomic/api/PicaComicInherent.kt)、[picaapi.py](https://github.com/yindaheng98/picacomic/blob/master/picaapi.py)、[pica-go client.go](https://github.com/niuhuan/pica-go/blob/master/client.go) |
+| **当前主流** | 以 `/*Cn` 结尾、**无**尾部反引号（长度 63；勿把 markdown 围栏算进密钥） | [PicaComicInherent.kt](https://github.com/czp3009/picacomic-api/blob/master/src/main/kotlin/com/hiczp/picacomic/api/PicaComicInherent.kt)、[pica-cli](https://github.com/justorez/pica-cli)、[pica-go client.go](https://github.com/niuhuan/pica-go/blob/master/client.go) |
 | 旧版（2019 逆向） | `~n}$S9$lGts=U)8zfL/R.PM9;4[3|@/CEsl~Kk!7?BYZ:BAa5zkkRBL7r|1/*Cr` | [PicaHeader.java](https://github.com/2024baibai/PicaComic-Api/blob/master/src/com/flannep/picacomic/api/PicaHeader.java)、[接口分析手记](https://blog.kaaass.net/archives/1074) |
 
 [pica_crawler](https://github.com/lx1169732264/pica_crawler/blob/master/config/config_backup.ini) 将 `pica_secret_key` 列为必填；错误密钥会导致登录响应无 `token` 或签名失败。历史密钥来源见 [知乎专栏（AnkiKong）](https://zhuanlan.zhihu.com/p/547321040)（链接可能失效，以活跃开源库为准）。

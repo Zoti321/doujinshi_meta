@@ -11,7 +11,8 @@ import httpx
 
 API_BASE = "https://picaapi.picacomic.com/"
 API_KEY = "C69BAF41DA5ABD1FFEDC6D2FEA56B"
-SECRET_KEY = r"~d}$Q7$eIni=V)9\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn`"
+# Must match hiczp / pica-cli / pica-go (63 chars, no trailing backtick).
+SECRET_KEY = r"~d}$Q7$eIni=V)9\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn"
 
 DEFAULT_HEADERS = {
     "api-key": API_KEY,
@@ -32,7 +33,10 @@ def _parse_api_payload(payload: dict[str, Any], *, context: str) -> dict[str, An
     data = payload.get("data")
     if not isinstance(data, dict):
         if context == "login":
-            raise RuntimeError("哔咔登录失败，请检查账号/密码")
+            raise RuntimeError(
+                "哔咔登录失败：响应无 token（请检查账号/密码；"
+                "若确认无误则为客户端签名密钥错误）"
+            )
         raise RuntimeError(f"bika {context} response missing data")
     return data
 
@@ -122,7 +126,10 @@ class BikaClient:
         data = _parse_api_payload(payload, context="login")
         token = data.get("token")
         if not token:
-            raise RuntimeError("哔咔登录失败，请检查账号/密码")
+            raise RuntimeError(
+                "哔咔登录失败：响应无 token（请检查账号/密码；"
+                "若确认无误则为客户端签名密钥错误）"
+            )
         self._token = token
 
     def get_comic(self, comic_id: str) -> dict[str, Any]:
@@ -134,7 +141,11 @@ class BikaClient:
     def list_categories(self) -> list[dict[str, Any]]:
         if not self._token:
             self.login()
-        return self._request("GET", "categories")
+        data = self._request("GET", "categories")
+        categories = data.get("categories")
+        if not isinstance(categories, list):
+            raise RuntimeError("哔咔 categories 响应缺少 categories 列表")
+        return [c for c in categories if isinstance(c, dict)]
 
     def list_comics_page(self, category: str, page: int, sort: str = "dd") -> dict[str, Any]:
         if not self._token:
@@ -142,4 +153,8 @@ class BikaClient:
         from urllib.parse import quote
 
         path = f"comics?c={quote(category)}&page={page}&s={sort}"
-        return self._request("GET", path)
+        data = self._request("GET", path)
+        # Envelope is usually {"comics": {docs, pages, ...}}; some clients flatten.
+        if isinstance(data.get("comics"), dict):
+            return data["comics"]
+        return data
