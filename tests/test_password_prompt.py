@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from doujinshi_tag_getter import config
+from doujinshi_meta import config
 
 
 def test_password_input_broken_under_msystem(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -28,6 +28,8 @@ def test_falls_back_to_visible_input_when_getpass_broken(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)

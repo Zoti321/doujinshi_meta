@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 
-from doujinshi_tag_getter.fetch import fetch_tags
-from doujinshi_tag_getter.sources import bika as bika_mod
+from doujinshi_meta.fetch import fetch_tags
+from doujinshi_meta.sources import bika as bika_mod
 
 
 def _install_connect_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -33,7 +33,7 @@ def test_fetch_tags_direct_connect_error_hints_proxy(
     monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
     _install_connect_error(monkeypatch)
 
-    with pytest.raises(RuntimeError, match=r"dtg config set proxy|`--proxy`") as exc_info:
+    with pytest.raises(RuntimeError, match=r"djm config set proxy|`--proxy`") as exc_info:
         fetch_tags("bika", ["comic-1"], proxy=None, delay=0)
 
     message = str(exc_info.value)
@@ -52,7 +52,7 @@ def test_fetch_tags_proxied_connect_error_does_not_hint_set_proxy(
 
     message = str(exc_info.value)
     assert "连接" in message or "网络" in message
-    assert "dtg config set proxy" not in message
+    assert "djm config set proxy" not in message
     assert "--proxy" not in message
 
 
@@ -86,7 +86,7 @@ def test_fetch_tags_login_missing_token_does_not_hint_proxy(
         fetch_tags("bika", ["comic-1"], proxy=None, delay=0)
 
     message = str(exc_info.value)
-    assert "dtg config set proxy" not in message
+    assert "djm config set proxy" not in message
     assert "--proxy" not in message
 
 
@@ -101,12 +101,12 @@ def test_fetch_tags_login_missing_data_does_not_hint_proxy(
         fetch_tags("bika", ["comic-1"], proxy=None, delay=0)
 
     message = str(exc_info.value)
-    assert "dtg config set proxy" not in message
+    assert "djm config set proxy" not in message
     assert "--proxy" not in message
 
 
 def test_proxy_to_httpx_removed_from_config() -> None:
-    import doujinshi_tag_getter.config as config
+    import doujinshi_meta.config as config
 
     assert not hasattr(config, "proxy_to_httpx")
 

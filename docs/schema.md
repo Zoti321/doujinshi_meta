@@ -6,8 +6,8 @@
 
 | 功能 | CLI 命令（草案） | 输出 |
 |------|------------------|------|
-| **1. 构建 tag 词表** | `dtg catalog --source {bika\|jmcomic}` | 去重 tag 列表 + 出现次数 |
-| **2. 爬取本子 tag** | `dtg fetch --source … --ids id1,id2` | 每本漫画的 tag 列表（不落库） |
+| **1. 构建 tag 词表** | `djm catalog --source {bika\|jmcomic}` | 去重 tag 列表 + 出现次数 |
+| **2. 爬取本子 tag** | `djm fetch --source … --ids id1,id2` | 每本漫画的 tag 列表（不落库） |
 
 持久化由**调用方**负责（Flutter 写本地 DB、缓存 JSON 等）；本工具只负责爬取与序列化。
 
@@ -114,35 +114,35 @@ v1 按 **source 分词表**，不做跨站合并。
 ```bash
 # 开发（uv）
 uv sync
-uv run dtg catalog --source jmcomic
+uv run djm catalog --source jmcomic
 
 # 安装 CLI
 uv tool install .
 
 # 功能 1：构建 tag 词表
-dtg catalog --source jmcomic
-dtg catalog --source bika -o bika-tags.json
-dtg catalog --source jmcomic --kind tag          # 仅自由标签词表
-dtg catalog --source bika --kind tag --kind author
-dtg catalog --source jmcomic --table   # 人类可读表格；默认 JSON 为集成契约
+djm catalog --source jmcomic
+djm catalog --source bika -o bika-tags.json
+djm catalog --source jmcomic --kind tag          # 仅自由标签词表
+djm catalog --source bika --kind tag --kind author
+djm catalog --source jmcomic --table   # 人类可读表格；默认 JSON 为集成契约
 
 # 功能 2：爬取本子 tag
-dtg fetch --source jmcomic --ids 410090,427413
-dtg fetch --source bika --ids-file ids.txt
+djm fetch --source jmcomic --ids 410090,427413
+djm fetch --source bika --ids-file ids.txt
 
 # 通用（默认直连，不设代理）
-dtg catalog --source jmcomic
+djm catalog --source jmcomic
 
 # 单次使用代理
-dtg --proxy http://127.0.0.1:7890 catalog --source bika
+djm --proxy http://127.0.0.1:7890 catalog --source bika
 
 # 持久配置代理
-dtg config set proxy http://127.0.0.1:7890
-dtg config show
-dtg config unset proxy
+djm config set proxy http://127.0.0.1:7890
+djm config show
+djm config unset proxy
 
 # 忽略持久配置，强制直连
-dtg --no-proxy catalog --source bika
+djm --no-proxy catalog --source bika
 ```
 
 | 选项 | 说明 |
@@ -151,10 +151,10 @@ dtg --no-proxy catalog --source bika
 | `--kind` | （仅 `catalog`）可重复；仅聚合/输出指定 Tag Kind；默认全部；仍爬取全部本子详情 |
 | `--table` | （仅 `catalog`）stdout 打印 `kind`/`name`/`count` 表格；与 `-o` 互斥；**非** JSON 契约 |
 | `--proxy` | 单次 HTTP 代理 URL；默认不使用代理 |
-| `--no-proxy` | 强制直连，忽略 `config.toml` / `DTG_PROXY` |
+| `--no-proxy` | 强制直连，忽略 `config.toml` / `DJM_PROXY` |
 | `--config` | 配置文件路径（默认见 `docs/credentials.md`） |
-| `dtg config` | `set proxy` / `unset proxy` / `show` — 持久代理配置 |
-| 哔咔凭证 | 环境变量 `DTG_BIKA_ACCOUNT`、`DTG_BIKA_PASSWORD`（兼容 `DTG_BIKA_EMAIL`）；可持久化到用户目录 `credentials.toml`；缺失时交互提示，登录成功后自动保存 |
+| `djm config` | `set proxy` / `unset proxy` / `show` — 持久代理配置 |
+| 哔咔凭证 | 环境变量 `DJM_BIKA_ACCOUNT`、`DJM_BIKA_PASSWORD`（兼容 `DTG_*` / `DTG_BIKA_EMAIL` 至 0.3.0）；可持久化到用户目录 `credentials.toml`；缺失时交互提示，登录成功后自动保存 |
 | 退出码 | `0` 成功；`1` 部分失败（见 `errors`）；`2` 致命错误 |
 
 ---
@@ -164,8 +164,8 @@ dtg --no-proxy catalog --source bika
 供非 CLI 场景或测试使用：
 
 ```python
-from doujinshi_tag_getter import build_catalog, fetch_tags
-from doujinshi_tag_getter.models import Source
+from doujinshi_meta import build_catalog, fetch_tags
+from doujinshi_meta.models import Source
 
 catalog = build_catalog(Source.JMCOMIC)  # 默认直连
 catalog = build_catalog(Source.JMCOMIC, proxy="http://127.0.0.1:7890")
@@ -184,7 +184,7 @@ Flutter **不直接 import Python**；推荐通过 **CLI 子进程** 或 **预�
 ### 方式 A：子进程调用 CLI（推荐）
 
 ```dart
-final result = await Process.run('dtg', [
+final result = await Process.run('djm', [
   'fetch',
   '--source', 'jmcomic',
   '--ids', albumId,
@@ -198,7 +198,7 @@ final items = json['items'] as List;
 
 ### 方式 B：读取 JSON 文件
 
-构建/CI 跑 `dtg catalog -o assets/tags/jmcomic.json`，Flutter `rootBundle.loadString` 加载词表。
+构建/CI 跑 `djm catalog -o assets/tags/jmcomic.json`，Flutter `rootBundle.loadString` 加载词表。
 
 ### 方式 C：Flutter 侧维护 tag 库
 
@@ -233,10 +233,10 @@ final items = json['items'] as List;
 ## 交付物形态
 
 ```
-doujinshi-tag-getter/          # uv 项目（pyproject.toml）
+doujinshi-meta/          # uv 项目（pyproject.toml）
   pyproject.toml               # uv sync / uv run
-  src/doujinshi_tag_getter/
-    cli.py                     # dtg 入口
+  src/doujinshi_meta/
+    cli.py                     # djm 入口
     catalog.py                 # 功能 1
     fetch.py                   # 功能 2
     models.py                  # dataclass ↔ JSON

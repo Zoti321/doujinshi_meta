@@ -3,13 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator
 
-from doujinshi_tag_getter.config import (
+from doujinshi_meta.config import (
     is_bika_network_error,
     require_bika_credentials,
     save_bika_credentials,
 )
-from doujinshi_tag_getter.models import ComicTagsItem, TagKind, TagRef
-from doujinshi_tag_getter.sources.bika import BikaClient
+from doujinshi_meta.models import ComicTagsItem, TagKind, TagRef
+from doujinshi_meta.sources.bika import BikaClient
 
 
 def open_bika_client(

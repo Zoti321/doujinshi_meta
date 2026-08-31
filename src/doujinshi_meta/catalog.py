@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import TextIO
 
-from doujinshi_tag_getter.models import (
+from doujinshi_meta.models import (
     CatalogStats,
     Source,
     TagCatalogResponse,
@@ -14,10 +14,10 @@ from doujinshi_tag_getter.models import (
     utc_now_iso,
     validate_kinds_for_source,
 )
-from doujinshi_tag_getter.sources.bika import BikaClient
-from doujinshi_tag_getter.sources.bika_ops import extract_tags_bika, open_bika_client
-from doujinshi_tag_getter.sources.jmcomic_ops import create_jmcomic_client, extract_tags_jmcomic
-from doujinshi_tag_getter.tag_counter import TagCounter
+from doujinshi_meta.sources.bika import BikaClient
+from doujinshi_meta.sources.bika_ops import extract_tags_bika, open_bika_client
+from doujinshi_meta.sources.jmcomic_ops import create_jmcomic_client, extract_tags_jmcomic
+from doujinshi_meta.tag_counter import TagCounter
 
 DEFAULT_DELAY = {Source.BIKA: 1.5, Source.JMCOMIC: 0.4}
 
@@ -94,7 +94,7 @@ def build_catalog(
             return extract_tags_jmcomic(album)
 
         def iter_ids():
-            from doujinshi_tag_getter.sources.jmcomic_ops import iter_comic_ids_jmcomic
+            from doujinshi_meta.sources.jmcomic_ops import iter_comic_ids_jmcomic
 
             yield from iter_comic_ids_jmcomic(client)
 
@@ -107,7 +107,7 @@ def build_catalog(
             return extract_tags_bika(comic)
 
         def iter_ids():
-            from doujinshi_tag_getter.sources.bika_ops import iter_comic_ids_bika
+            from doujinshi_meta.sources.bika_ops import iter_comic_ids_bika
 
             yield from iter_comic_ids_bika(bika)
 

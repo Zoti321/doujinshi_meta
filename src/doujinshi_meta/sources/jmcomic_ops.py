@@ -4,7 +4,7 @@ from typing import Iterator
 
 from jmcomic import JmMagicConstants, JmOption
 
-from doujinshi_tag_getter.models import ComicTagsItem, TagKind, TagRef
+from doujinshi_meta.models import ComicTagsItem, TagKind, TagRef
 
 JMCOMIC_CATEGORIES = [
     JmMagicConstants.CATEGORY_ALL,

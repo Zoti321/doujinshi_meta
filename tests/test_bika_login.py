@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from doujinshi_tag_getter.sources.bika import BikaClient
+from doujinshi_meta.sources.bika import BikaClient
 
 
 def _mock_post(payload: dict, *, status: int = 200) -> MagicMock:

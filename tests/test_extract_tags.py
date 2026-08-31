@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from doujinshi_tag_getter.models import TagKind
-from doujinshi_tag_getter.sources.bika_ops import extract_tags_bika
-from doujinshi_tag_getter.sources.jmcomic_ops import extract_tags_jmcomic
+from doujinshi_meta.models import TagKind
+from doujinshi_meta.sources.bika_ops import extract_tags_bika
+from doujinshi_meta.sources.jmcomic_ops import extract_tags_jmcomic
 
 
 def test_extract_tags_bika_skips_categories() -> None:

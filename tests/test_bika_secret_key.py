@@ -7,7 +7,7 @@ Canonical sources: hiczp PicaComicInherent.kt, pica-cli, niuhuan/pica-go.
 
 from __future__ import annotations
 
-from doujinshi_tag_getter.sources.bika import SECRET_KEY
+from doujinshi_meta.sources.bika import SECRET_KEY
 
 # Ends with /*Cn — no trailing backtick. Length 63.
 CANONICAL_SECRET_KEY = (

@@ -4,8 +4,8 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from doujinshi_tag_getter.cli import app
-from doujinshi_tag_getter.config import save_bika_credentials, save_config, UserConfig
+from doujinshi_meta.cli import app
+from doujinshi_meta.config import save_bika_credentials, save_config, UserConfig
 
 runner = CliRunner()
 

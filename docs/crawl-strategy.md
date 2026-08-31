@@ -1,4 +1,4 @@
-# 全量爬取策略（`dtg catalog`）
+# 全量爬取策略（`djm catalog`）
 
 > 对应 ticket：[全量爬取遍历与限速策略](../.wayfinder/tickets/005-grilling-full-crawl-strategy.md)
 
@@ -55,7 +55,7 @@ flowchart LR
 | 并发 | **1**（串行） | 单账号、防 429 |
 | 超时 | 15 s | |
 | 重试 | 最多 3 次，指数退避 2/4/8 s | 429/5xx |
-| 代理 | 默认直连；国内失败时用 `dtg config set proxy` 或 `--proxy` | 见 [`credentials.md`](credentials.md) |
+| 代理 | 默认直连；国内失败时用 `djm config set proxy` 或 `--proxy` | 见 [`credentials.md`](credentials.md) |
 | 认证 | login token + 签名头 | 401 时重登 |
 
 ### 体量估算
@@ -185,8 +185,8 @@ tags_out = [
 **CLI**：
 
 ```bash
-dtg catalog --source bika --checkpoint progress.json
-dtg catalog --source bika --checkpoint progress.json --resume
+djm catalog --source bika --checkpoint progress.json
+djm catalog --source bika --checkpoint progress.json --resume
 ```
 
 ---
@@ -196,7 +196,7 @@ dtg catalog --source bika --checkpoint progress.json --resume
 与 catalog 详情阶段相同间隔，串行：
 
 ```bash
-dtg fetch --source jmcomic --ids id1,id2,id3
+djm fetch --source jmcomic --ids id1,id2,id3
 # 默认间隔 --delay 0.4（禁漫）/ 1.5（哔咔），可覆盖
 ```
 

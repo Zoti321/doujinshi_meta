@@ -10,24 +10,34 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from doujinshi_tag_getter.catalog import build_catalog
-from doujinshi_tag_getter.config import (
-    DEFAULT_CONFIG_PATH,
+from doujinshi_meta.catalog import build_catalog
+from doujinshi_meta.config import (
     UserConfig,
     clear_bika_credentials,
     credentials_path_beside,
+    default_config_path,
     load_bika_credentials,
     load_config,
     mask_account,
     resolve_proxy,
     save_config,
 )
-from doujinshi_tag_getter.fetch import fetch_tags
-from doujinshi_tag_getter.models import Source, TagCatalogResponse, normalize_kinds, validate_kinds_for_source
+from doujinshi_meta.fetch import fetch_tags
+from doujinshi_meta.models import Source, TagCatalogResponse, normalize_kinds, validate_kinds_for_source
 
-app = typer.Typer(no_args_is_help=True, add_completion=False, name="dtg")
+app = typer.Typer(no_args_is_help=True, add_completion=False, name="djm")
 config_app = typer.Typer(no_args_is_help=True, help="持久配置")
 app.add_typer(config_app, name="config")
+
+
+def run() -> None:
+    """Console entry for ``djm`` and deprecated ``dtg``."""
+    if Path(sys.argv[0]).stem.lower() == "dtg":
+        print(
+            "警告: `dtg` 已弃用，请改用 `djm`（将在 0.3.0 移除）。",
+            file=sys.stderr,
+        )
+    app()
 
 
 class SourceOption(str, Enum):
@@ -56,6 +66,10 @@ def _write_catalog_table(result: TagCatalogResponse) -> None:
 
 def _config_path(config: Path | None) -> Path | None:
     return config
+
+
+def _effective_config_path(config: Path | None) -> Path:
+    return config if config is not None else default_config_path()
 
 
 def _resolved_proxy(
@@ -181,7 +195,7 @@ def config_show(
     config: Optional[Path] = typer.Option(None, "--config", help="配置文件路径"),
 ) -> None:
     """显示当前配置。"""
-    path = _config_path(config) or DEFAULT_CONFIG_PATH
+    path = _effective_config_path(config)
     cfg = load_config(path)
     typer.echo(f"config: {path}")
     typer.echo(f"proxy: {cfg.proxy or '(direct)'}")
@@ -204,7 +218,7 @@ def config_set(
     if key != "proxy":
         typer.echo(f"未知配置项: {key}", err=True)
         raise typer.Exit(code=2)
-    path = _config_path(config) or DEFAULT_CONFIG_PATH
+    path = _effective_config_path(config)
     save_config(UserConfig(proxy=value), path)
     typer.echo(f"已写入 {path}")
 
@@ -215,7 +229,7 @@ def config_unset(
     config: Optional[Path] = typer.Option(None, "--config", help="配置文件路径"),
 ) -> None:
     """清除持久配置。"""
-    path = _config_path(config) or DEFAULT_CONFIG_PATH
+    path = _effective_config_path(config)
     if key == "proxy":
         cfg = load_config(path)
         cfg.proxy = None
@@ -231,4 +245,4 @@ def config_unset(
 
 
 if __name__ == "__main__":
-    app()
+    run()

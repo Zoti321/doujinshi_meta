@@ -5,10 +5,10 @@ import time
 from pathlib import Path
 from typing import TextIO
 
-from doujinshi_tag_getter.models import FetchError, FetchTagsResponse, Source, utc_now_iso
-from doujinshi_tag_getter.sources.bika import BikaClient
-from doujinshi_tag_getter.sources.bika_ops import fetch_comic_bika, open_bika_client
-from doujinshi_tag_getter.sources.jmcomic_ops import create_jmcomic_client, fetch_comic_jmcomic
+from doujinshi_meta.models import FetchError, FetchTagsResponse, Source, utc_now_iso
+from doujinshi_meta.sources.bika import BikaClient
+from doujinshi_meta.sources.bika_ops import fetch_comic_bika, open_bika_client
+from doujinshi_meta.sources.jmcomic_ops import create_jmcomic_client, fetch_comic_jmcomic
 
 DEFAULT_DELAY = {Source.BIKA: 1.5, Source.JMCOMIC: 0.4}
 

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from doujinshi_tag_getter.sources.bika import BikaClient
-from doujinshi_tag_getter.sources.bika_ops import iter_comic_ids_bika
+from doujinshi_meta.sources.bika import BikaClient
+from doujinshi_meta.sources.bika_ops import iter_comic_ids_bika
 
 
 def test_list_categories_unwraps_categories_array() -> None:

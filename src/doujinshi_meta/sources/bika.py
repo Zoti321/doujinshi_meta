@@ -41,7 +41,7 @@ def _parse_api_payload(payload: dict[str, Any], *, context: str) -> dict[str, An
     return data
 
 
-PROXY_HINT = "可尝试 `dtg config set proxy ...` 或 `--proxy`"
+PROXY_HINT = "可尝试 `djm config set proxy ...` 或 `--proxy`"
 
 
 def _network_error_message(exc: BaseException, *, proxy: str | None) -> str:

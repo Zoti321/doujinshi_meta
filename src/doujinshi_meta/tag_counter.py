@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from doujinshi_tag_getter.models import TagCatalogEntry, TagRef
+from doujinshi_meta.models import TagCatalogEntry, TagRef
 
 
 class TagCounter:

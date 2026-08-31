@@ -1,7 +1,7 @@
 [project]
-name = "doujinshi-tag-getter"
-version = "0.1.0"
-description = "CLI tool to crawl tag metadata from Bika and JMComic"
+name = "doujinshi-meta"
+version = "0.2.0"
+description = "CLI tool to crawl doujinshi metadata from Bika and JMComic"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -12,17 +12,18 @@ dependencies = [
 ]
 
 [project.scripts]
-dtg = "doujinshi_tag_getter.cli:app"
+djm = "doujinshi_meta.cli:run"
+dtg = "doujinshi_meta.cli:run"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/doujinshi_tag_getter"]
+packages = ["src/doujinshi_meta"]
 
 [tool.hatch.build.targets.wheel.sources]
-"src/doujinshi_tag_getter" = "doujinshi_tag_getter"
+"src/doujinshi_meta" = "doujinshi_meta"
 
 [dependency-groups]
 dev = [

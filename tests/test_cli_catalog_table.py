@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from doujinshi_tag_getter.cli import app
-from doujinshi_tag_getter.models import CatalogStats, TagCatalogEntry, TagCatalogResponse
+from doujinshi_meta.cli import app
+from doujinshi_meta.models import CatalogStats, TagCatalogEntry, TagCatalogResponse
 
 runner = CliRunner()
 
@@ -28,7 +28,7 @@ def _sample_catalog(*, tags: list[TagCatalogEntry] | None = None) -> TagCatalogR
 
 def test_catalog_table_prints_kind_name_count() -> None:
     with patch(
-        "doujinshi_tag_getter.cli.build_catalog",
+        "doujinshi_meta.cli.build_catalog",
         return_value=_sample_catalog(),
     ):
         result = runner.invoke(app, ["catalog", "--source", "jmcomic", "--table"])
@@ -50,7 +50,7 @@ def test_catalog_table_prints_kind_name_count() -> None:
 
 def test_catalog_default_still_json() -> None:
     with patch(
-        "doujinshi_tag_getter.cli.build_catalog",
+        "doujinshi_meta.cli.build_catalog",
         return_value=_sample_catalog(),
     ):
         result = runner.invoke(app, ["catalog", "--source", "jmcomic"])
@@ -64,7 +64,7 @@ def test_catalog_default_still_json() -> None:
 
 def test_catalog_table_empty_tags_prints_header_only() -> None:
     with patch(
-        "doujinshi_tag_getter.cli.build_catalog",
+        "doujinshi_meta.cli.build_catalog",
         return_value=_sample_catalog(tags=[]),
     ):
         result = runner.invoke(app, ["catalog", "--source", "jmcomic", "--table"])
@@ -81,7 +81,7 @@ def test_catalog_table_empty_tags_prints_header_only() -> None:
 def test_catalog_table_and_output_are_mutually_exclusive(tmp_path: Path) -> None:
     out_path = tmp_path / "tags.json"
     with patch(
-        "doujinshi_tag_getter.cli.build_catalog",
+        "doujinshi_meta.cli.build_catalog",
         return_value=_sample_catalog(),
     ) as mock_build:
         result = runner.invoke(
@@ -110,7 +110,7 @@ def test_catalog_table_preserves_tag_order() -> None:
         TagCatalogEntry(kind="author", name="third", count=1),
     ]
     with patch(
-        "doujinshi_tag_getter.cli.build_catalog",
+        "doujinshi_meta.cli.build_catalog",
         return_value=_sample_catalog(tags=tags),
     ):
         result = runner.invoke(app, ["catalog", "--source", "jmcomic", "--table"])

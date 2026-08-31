@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from doujinshi_tag_getter.models import TagRef, normalize_kinds
-from doujinshi_tag_getter.tag_counter import TagCounter
+from doujinshi_meta.models import TagRef, normalize_kinds
+from doujinshi_meta.tag_counter import TagCounter
 
 
 def test_normalize_kinds_lowercases() -> None:

@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from doujinshi_tag_getter.cli import app
-from doujinshi_tag_getter.models import CatalogStats, TagCatalogEntry, TagCatalogResponse
+from doujinshi_meta.cli import app
+from doujinshi_meta.models import CatalogStats, TagCatalogEntry, TagCatalogResponse
 
 runner = CliRunner()
 
@@ -31,7 +31,7 @@ def _sample_catalog(
 
 
 def test_catalog_without_kind_passes_none() -> None:
-    with patch("doujinshi_tag_getter.cli.build_catalog") as mock_build:
+    with patch("doujinshi_meta.cli.build_catalog") as mock_build:
         mock_build.return_value = _sample_catalog()
         result = runner.invoke(app, ["catalog", "--source", "jmcomic"])
 
@@ -43,7 +43,7 @@ def test_catalog_without_kind_passes_none() -> None:
 
 
 def test_catalog_kind_tag_passes_normalized_kinds() -> None:
-    with patch("doujinshi_tag_getter.cli.build_catalog") as mock_build:
+    with patch("doujinshi_meta.cli.build_catalog") as mock_build:
         mock_build.return_value = _sample_catalog(kinds=["tag"])
         result = runner.invoke(
             app,
@@ -57,7 +57,7 @@ def test_catalog_kind_tag_passes_normalized_kinds() -> None:
 
 
 def test_catalog_multiple_kinds_deduped_and_sorted() -> None:
-    with patch("doujinshi_tag_getter.cli.build_catalog") as mock_build:
+    with patch("doujinshi_meta.cli.build_catalog") as mock_build:
         mock_build.return_value = _sample_catalog(kinds=["author", "tag"])
         result = runner.invoke(
             app,
@@ -96,7 +96,7 @@ def test_catalog_table_with_kind_shows_filtered_rows() -> None:
         TagCatalogEntry(kind="parody", name="原神", count=3),
     ]
     with patch(
-        "doujinshi_tag_getter.cli.build_catalog",
+        "doujinshi_meta.cli.build_catalog",
         return_value=_sample_catalog(tags=[tags[0]], kinds=["tag"]),
     ):
         result = runner.invoke(

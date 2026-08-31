@@ -1,5 +1,10 @@
 # 领域词汇表
 
+## 产品（doujinshi-meta / `djm`）
+
+从外部来源站爬取**本子元数据**的 CLI / Python 库。当前交付主要为标题与多维 Tag（见输出契约）；`meta` 描述现状，不承诺近期扩封面/页数等字段。CLI 主命令为 `djm`；`dtg` 为兼容别名（计划 0.3.0 移除）。
+_Avoid_: 把产品范围等同于「只做 tag getter」
+
 ## Tag（标签）
 
 漫画元数据中的分类/描述词。不同来源命名可能不同，输出保留原始值。
@@ -37,13 +42,13 @@ _Avoid_: 爬取类型（作领域名）、维度过滤（含糊）
 
 ## 表格视图（Table View）
 
-`dtg catalog --table` 时 CLI 在 stdout 打印人类可读表格（`kind` / `name` / `count`），仅供终端浏览。
+`djm catalog --table` 时 CLI 在 stdout 打印人类可读表格（`kind` / `name` / `count`），仅供终端浏览。
 **不属于**输出契约；Flutter / 脚本集成仍只依赖 JSON 契约。
 _Avoid_: 表格输出、pretty 输出（作契约名）
 
 ## 集成方式
 
-- **CLI 子进程**：Flutter / 其他项目调用 `dtg` 命令，解析 JSON
+- **CLI 子进程**：Flutter / 其他项目调用 `djm` 命令，解析 JSON
 - **Python 库**：同结构 API，供脚本或测试使用
 - **静态 JSON 文件**：CI 生成词表后放入 Flutter `assets`
 

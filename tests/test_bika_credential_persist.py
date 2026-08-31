@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 import httpx
 import pytest
 
-from doujinshi_tag_getter.config import load_bika_credentials, save_bika_credentials
-from doujinshi_tag_getter.sources import bika as bika_mod
-from doujinshi_tag_getter.sources.bika_ops import open_bika_client
+from doujinshi_meta.config import load_bika_credentials, save_bika_credentials
+from doujinshi_meta.sources import bika as bika_mod
+from doujinshi_meta.sources.bika_ops import open_bika_client
 
 
 def _login_payload(token: str | None) -> dict:
@@ -52,6 +52,8 @@ def _install_login_sequence(
 def test_open_saves_when_prompted(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -59,9 +61,9 @@ def test_open_saves_when_prompted(
     _install_login_sequence(monkeypatch, [_login_payload("tok")])
 
     monkeypatch.setattr(
-        "doujinshi_tag_getter.sources.bika_ops.require_bika_credentials",
+        "doujinshi_meta.sources.bika_ops.require_bika_credentials",
         lambda **_kwargs: __import__(
-            "doujinshi_tag_getter.config", fromlist=["ResolvedBikaCredentials"]
+            "doujinshi_meta.config", fromlist=["ResolvedBikaCredentials"]
         ).ResolvedBikaCredentials(
             account="typed@example.com",
             password="typed-pass",
@@ -96,6 +98,8 @@ def test_open_does_not_save_when_from_env(
 def test_open_does_not_save_when_from_file_only(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -114,6 +118,8 @@ def test_open_does_not_save_when_from_file_only(
 def test_open_reprompts_on_file_auth_failure_then_saves(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -124,7 +130,7 @@ def test_open_reprompts_on_file_auth_failure_then_saves(
         [_login_payload(None), _login_payload("tok")],
     )
 
-    from doujinshi_tag_getter.config import ResolvedBikaCredentials
+    from doujinshi_meta.config import ResolvedBikaCredentials
 
     calls = {"n": 0}
 
@@ -146,7 +152,7 @@ def test_open_reprompts_on_file_auth_failure_then_saves(
         )
 
     monkeypatch.setattr(
-        "doujinshi_tag_getter.sources.bika_ops.require_bika_credentials",
+        "doujinshi_meta.sources.bika_ops.require_bika_credentials",
         fake_require,
     )
 
@@ -166,6 +172,8 @@ def test_open_reprompts_on_file_auth_failure_then_saves(
 def test_open_does_not_reprompt_on_network_error_with_file(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)

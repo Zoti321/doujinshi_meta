@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from doujinshi_tag_getter.config import (
+from doujinshi_meta.config import (
     load_bika_credentials,
     require_bika_credentials,
     save_bika_credentials,
@@ -53,6 +53,8 @@ def test_prefers_account_env_over_email(monkeypatch: pytest.MonkeyPatch, tmp_pat
 def test_prompts_when_env_and_file_missing(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -73,6 +75,8 @@ def test_prompts_when_env_and_file_missing(
 
 
 def test_loads_from_credentials_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -108,6 +112,8 @@ def test_merges_env_account_with_file_password(
 
 
 def test_ignore_stored_skips_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -128,6 +134,8 @@ def test_ignore_stored_skips_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
 
 
 def test_prompts_when_env_empty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "")
     monkeypatch.setenv("DTG_BIKA_ACCOUNT", "")
     monkeypatch.setenv("DTG_BIKA_EMAIL", "")
     monkeypatch.setenv("DTG_BIKA_PASSWORD", "")
@@ -145,6 +153,8 @@ def test_prompts_when_env_empty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
 def test_rejects_empty_interactive_input(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
@@ -178,6 +188,8 @@ def test_prompts_only_missing_password(
 
 
 def test_eof_during_prompt_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
