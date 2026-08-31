@@ -15,15 +15,14 @@ class TagCounter:
     def merge(self, other: TagCounter) -> None:
         self._counter.update(other._counter)
 
-    def to_entries(self) -> list[TagCatalogEntry]:
+    def to_entries(self, *, kinds: set[str] | None = None) -> list[TagCatalogEntry]:
+        items = self._counter.most_common()
+        if kinds is not None:
+            items = [item for item in items if item[0][0] in kinds]
         return [
             TagCatalogEntry(kind=kind, name=name, count=count)
-            for (kind, name), count in self._counter.most_common()
+            for (kind, name), count in items
         ]
-
-    def unique_count(self) -> int:
-        return len(self._counter)
-
     def to_checkpoint_dict(self) -> dict[str, int]:
         return {f"{kind}:{name}": count for (kind, name), count in self._counter.items()}
 

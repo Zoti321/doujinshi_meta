@@ -6,7 +6,14 @@ import time
 from pathlib import Path
 from typing import TextIO
 
-from doujinshi_tag_getter.models import CatalogStats, Source, TagCatalogResponse, utc_now_iso
+from doujinshi_tag_getter.models import (
+    CatalogStats,
+    Source,
+    TagCatalogResponse,
+    normalize_kinds,
+    utc_now_iso,
+    validate_kinds_for_source,
+)
 from doujinshi_tag_getter.sources.bika import BikaClient
 from doujinshi_tag_getter.sources.bika_ops import extract_tags_bika, open_bika_client
 from doujinshi_tag_getter.sources.jmcomic_ops import create_jmcomic_client, extract_tags_jmcomic
@@ -25,12 +32,15 @@ def build_catalog(
     proxy: str | None = None,
     delay: float | None = None,
     limit: int | None = None,
+    kinds: list[str] | None = None,
     checkpoint: Path | None = None,
     resume: bool = False,
     stderr: TextIO | None = None,
     credentials_path: Path | None = None,
 ) -> TagCatalogResponse:
     src = Source(source)
+    normalized_kinds = normalize_kinds(kinds)
+    validate_kinds_for_source(src, normalized_kinds)
     err_stream = stderr or sys.stderr
     wait = delay if delay is not None else DEFAULT_DELAY[src]
     counter = TagCounter()
@@ -41,6 +51,14 @@ def build_catalog(
 
     if checkpoint and resume and checkpoint.is_file():
         state = json.loads(checkpoint.read_text(encoding="utf-8"))
+        checkpoint_kinds = state.get("kinds")
+        if checkpoint_kinds is not None:
+            checkpoint_kinds = normalize_kinds(checkpoint_kinds)
+        if checkpoint_kinds != normalized_kinds:
+            raise RuntimeError(
+                "checkpoint kinds 与当前 --kind 不一致："
+                f"checkpoint={checkpoint_kinds or '全量'}, current={normalized_kinds or '全量'}"
+            )
         counter = TagCounter.from_checkpoint_dict(state.get("tag_counter", {}))
         seen_ids = set(state.get("seen_ids", []))
         pending_ids = list(state.get("pending_ids", []))
@@ -57,6 +75,7 @@ def build_catalog(
             "schema_version": "1.0",
             "source": src.value,
             "phase": phase,
+            "kinds": normalized_kinds,
             "seen_ids": sorted(seen_ids),
             "pending_ids": pending_ids,
             "tag_counter": counter.to_checkpoint_dict(),
@@ -128,10 +147,13 @@ def build_catalog(
             client.close()
         save_checkpoint()
 
-    stats.tags_unique = counter.unique_count()
+    kind_filter = set(normalized_kinds) if normalized_kinds is not None else None
+    tags = counter.to_entries(kinds=kind_filter)
+    stats.tags_unique = len(tags)
     return TagCatalogResponse(
         source=src.value,
         generated_at=utc_now_iso(),
         stats=stats,
-        tags=counter.to_entries(),
+        kinds=normalized_kinds,
+        tags=tags,
     )

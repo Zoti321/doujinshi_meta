@@ -23,7 +23,7 @@ from doujinshi_tag_getter.config import (
     save_config,
 )
 from doujinshi_tag_getter.fetch import fetch_tags
-from doujinshi_tag_getter.models import Source, TagCatalogResponse
+from doujinshi_tag_getter.models import Source, TagCatalogResponse, normalize_kinds, validate_kinds_for_source
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, name="dtg")
 config_app = typer.Typer(no_args_is_help=True, help="持久配置")
@@ -122,6 +122,11 @@ def fetch_cmd(
 @app.command("catalog")
 def catalog_cmd(
     source: SourceOption = typer.Option(..., "--source", help="来源站"),
+    kind: list[str] = typer.Option(
+        [],
+        "--kind",
+        help="仅聚合/输出指定 Tag Kind（可重复）；默认全部 Kind；仍爬取全部本子详情",
+    ),
     output: Optional[Path] = typer.Option(None, "-o", "--output", help="写入 JSON 文件"),
     table: bool = typer.Option(
         False,
@@ -142,11 +147,19 @@ def catalog_cmd(
         raise typer.Exit(code=2)
 
     try:
+        kinds = normalize_kinds(kind or None)
+        validate_kinds_for_source(Source(source.value), kinds)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+
+    try:
         result = build_catalog(
             Source(source.value),
             proxy=_resolved_proxy(proxy, no_proxy, config),
             delay=delay,
             limit=limit,
+            kinds=kinds,
             checkpoint=checkpoint,
             resume=resume,
             credentials_path=_credentials_path(config),

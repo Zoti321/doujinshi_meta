@@ -37,7 +37,7 @@ status: open
 
 ## 地图状态
 
-**规划已完成**（003 为可选环境自测）。008 / 009 已关闭。
+**规划已完成**（003 为可选环境自测）。008 / 009 / 010 已关闭。
 
 ## Out of scope
 
@@ -58,3 +58,4 @@ status: open
 | [代理与哔咔凭证本地管理方案](tickets/007-grilling-credentials-proxy.md) | grilling | closed | — |
 | [修正哔咔代理提示、清理死代码并回滚 App 头](tickets/008-fix-proxy-hint-client-cleanup.md) | task | closed | — |
 | [catalog 命令可选表格输出](tickets/009-catalog-table-output.md) | task | closed | — |
+| [catalog 命令按 Tag Kind 过滤词表](tickets/010-catalog-kind-filter.md) | task | closed | — |

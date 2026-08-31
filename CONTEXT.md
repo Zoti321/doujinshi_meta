@@ -14,6 +14,11 @@
 - `category` — 平台分区（哔咔）
 - `work` / `actor` / `author` — 禁漫元数据维度
 
+## Kind 过滤（Kind Filter）
+
+`catalog` 命令可选地只聚合/输出指定 Tag Kind 的词表子集（如仅 `tag`）。**不改变**本子枚举与详情请求策略；过滤发生在聚合与输出阶段。
+_Avoid_: 爬取类型（作领域名）、维度过滤（含糊）
+
 ## 来源站（Source）
 
 `bika`（哔咔）、`jmcomic`（禁漫天堂）。

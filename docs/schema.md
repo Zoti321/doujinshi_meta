@@ -60,15 +60,16 @@
     "tags_unique": 3842,
     "errors": 3
   },
+  "kinds": ["tag"],
   "tags": [
-    { "kind": "tag", "name": "巨乳", "count": 1523 },
-    { "kind": "work", "name": "原神", "count": 89 }
+    { "kind": "tag", "name": "巨乳", "count": 1523 }
   ]
 }
 ```
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
+| `kinds` | string[]? | 可选；指定 Kind 过滤时列出本次使用的 Kind（字母序）；全量词表时省略 |
 | `tags[].kind` | string | TagKind |
 | `tags[].name` | string | 原始标签名 |
 | `tags[].count` | int | 出现于多少本子 |
@@ -121,6 +122,8 @@ uv tool install .
 # 功能 1：构建 tag 词表
 dtg catalog --source jmcomic
 dtg catalog --source bika -o bika-tags.json
+dtg catalog --source jmcomic --kind tag          # 仅自由标签词表
+dtg catalog --source bika --kind tag --kind author
 dtg catalog --source jmcomic --table   # 人类可读表格；默认 JSON 为集成契约
 
 # 功能 2：爬取本子 tag
@@ -145,6 +148,7 @@ dtg --no-proxy catalog --source bika
 | 选项 | 说明 |
 |------|------|
 | `-o, --output` | 写文件；省略则 stdout |
+| `--kind` | （仅 `catalog`）可重复；仅聚合/输出指定 Tag Kind；默认全部；仍爬取全部本子详情 |
 | `--table` | （仅 `catalog`）stdout 打印 `kind`/`name`/`count` 表格；与 `-o` 互斥；**非** JSON 契约 |
 | `--proxy` | 单次 HTTP 代理 URL；默认不使用代理 |
 | `--no-proxy` | 强制直连，忽略 `config.toml` / `DTG_PROXY` |

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import StrEnum
-from typing import Any
+from typing import Any, Sequence
 
 
 class Source(StrEnum):
@@ -17,6 +17,34 @@ class TagKind(StrEnum):
     WORK = "work"
     ACTOR = "actor"
     AUTHOR = "author"
+
+
+SOURCE_KINDS: dict[Source, frozenset[str]] = {
+    Source.BIKA: frozenset({TagKind.TAG, TagKind.CATEGORY, TagKind.AUTHOR}),
+    Source.JMCOMIC: frozenset({TagKind.TAG, TagKind.WORK, TagKind.ACTOR, TagKind.AUTHOR}),
+}
+
+
+def normalize_kinds(kinds: Sequence[str] | None) -> list[str] | None:
+    if kinds is None:
+        return None
+    unique = sorted({kind.lower() for kind in kinds})
+    if not unique:
+        raise ValueError("至少指定一个 --kind")
+    return unique
+
+
+def validate_kinds_for_source(source: Source, kinds: list[str] | None) -> None:
+    if kinds is None:
+        return
+    allowed = SOURCE_KINDS[source]
+    invalid = [kind for kind in kinds if kind not in allowed]
+    if invalid:
+        allowed_str = ", ".join(sorted(allowed))
+        invalid_str = ", ".join(invalid)
+        raise ValueError(
+            f"来源站 {source.value} 不支持 kind: {invalid_str}；允许: {allowed_str}"
+        )
 
 
 @dataclass
@@ -62,10 +90,14 @@ class TagCatalogResponse:
     source: str = ""
     generated_at: str = ""
     stats: CatalogStats = field(default_factory=CatalogStats)
+    kinds: list[str] | None = None
     tags: list[TagCatalogEntry] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        if data.get("kinds") is None:
+            data.pop("kinds", None)
+        return data
 
 
 @dataclass
