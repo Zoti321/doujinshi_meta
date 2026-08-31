@@ -12,7 +12,11 @@ from doujinshi_tag_getter.catalog import build_catalog
 from doujinshi_tag_getter.config import (
     DEFAULT_CONFIG_PATH,
     UserConfig,
+    clear_bika_credentials,
+    credentials_path_beside,
+    load_bika_credentials,
     load_config,
+    mask_account,
     resolve_proxy,
     save_config,
 )
@@ -51,6 +55,10 @@ def _resolved_proxy(
     return resolve_proxy(cli_proxy=proxy, cli_no_proxy=no_proxy, config=cfg)
 
 
+def _credentials_path(config_path: Path | None) -> Path:
+    return credentials_path_beside(_config_path(config_path))
+
+
 def _parse_ids(ids: Optional[str], ids_file: Optional[Path]) -> list[str]:
     result: list[str] = []
     if ids:
@@ -86,6 +94,7 @@ def fetch_cmd(
             id_list,
             proxy=_resolved_proxy(proxy, no_proxy, config),
             delay=delay,
+            credentials_path=_credentials_path(config),
         )
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
@@ -119,6 +128,7 @@ def catalog_cmd(
             limit=limit,
             checkpoint=checkpoint,
             resume=resume,
+            credentials_path=_credentials_path(config),
         )
     except RuntimeError as exc:
         typer.echo(str(exc), err=True)
@@ -138,6 +148,13 @@ def config_show(
     cfg = load_config(path)
     typer.echo(f"config: {path}")
     typer.echo(f"proxy: {cfg.proxy or '(direct)'}")
+    cred_path = credentials_path_beside(path)
+    stored = load_bika_credentials(cred_path)
+    if stored:
+        typer.echo(f"credentials: {cred_path}")
+        typer.echo(f"bika_account: {mask_account(stored.account)}")
+    else:
+        typer.echo(f"credentials: {cred_path} (none)")
 
 
 @config_app.command("set")
@@ -157,18 +174,23 @@ def config_set(
 
 @config_app.command("unset")
 def config_unset(
-    key: str = typer.Argument(..., help="配置项，如 proxy"),
+    key: str = typer.Argument(..., help="配置项，如 proxy 或 bika-credentials"),
     config: Optional[Path] = typer.Option(None, "--config", help="配置文件路径"),
 ) -> None:
     """清除持久配置。"""
-    if key != "proxy":
-        typer.echo(f"未知配置项: {key}", err=True)
-        raise typer.Exit(code=2)
     path = _config_path(config) or DEFAULT_CONFIG_PATH
-    cfg = load_config(path)
-    cfg.proxy = None
-    save_config(cfg, path)
-    typer.echo(f"已更新 {path}")
+    if key == "proxy":
+        cfg = load_config(path)
+        cfg.proxy = None
+        save_config(cfg, path)
+        typer.echo(f"已更新 {path}")
+        return
+    if key == "bika-credentials":
+        cred_path = clear_bika_credentials(credentials_path_beside(path))
+        typer.echo(f"已清除 {cred_path}")
+        return
+    typer.echo(f"未知配置项: {key}", err=True)
+    raise typer.Exit(code=2)
 
 
 if __name__ == "__main__":

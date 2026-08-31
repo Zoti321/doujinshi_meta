@@ -148,7 +148,7 @@ dtg --no-proxy catalog --source bika
 | `--no-proxy` | 强制直连，忽略 `config.toml` / `DTG_PROXY` |
 | `--config` | 配置文件路径（默认见 `docs/credentials.md`） |
 | `dtg config` | `set proxy` / `unset proxy` / `show` — 持久代理配置 |
-| 哔咔凭证 | 环境变量 `DTG_BIKA_EMAIL`、`DTG_BIKA_PASSWORD`；缺失时交互提示输入 |
+| 哔咔凭证 | 环境变量 `DTG_BIKA_ACCOUNT`、`DTG_BIKA_PASSWORD`（兼容 `DTG_BIKA_EMAIL`）；可持久化到用户目录 `credentials.toml`；缺失时交互提示，登录成功后自动保存 |
 | 退出码 | `0` 成功；`1` 部分失败（见 `errors`）；`2` 致命错误 |
 
 ---

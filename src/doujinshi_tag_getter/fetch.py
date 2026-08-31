@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import sys
 import time
+from pathlib import Path
 from typing import TextIO
 
-from doujinshi_tag_getter.config import require_bika_credentials
 from doujinshi_tag_getter.models import FetchError, FetchTagsResponse, Source, utc_now_iso
 from doujinshi_tag_getter.sources.bika import BikaClient
-from doujinshi_tag_getter.sources.bika_ops import fetch_comic_bika
+from doujinshi_tag_getter.sources.bika_ops import fetch_comic_bika, open_bika_client
 from doujinshi_tag_getter.sources.jmcomic_ops import create_jmcomic_client, fetch_comic_jmcomic
 
 DEFAULT_DELAY = {Source.BIKA: 1.5, Source.JMCOMIC: 0.4}
@@ -24,6 +24,7 @@ def fetch_tags(
     proxy: str | None = None,
     delay: float | None = None,
     stderr: TextIO | None = None,
+    credentials_path: Path | None = None,
 ) -> FetchTagsResponse:
     src = Source(source)
     err_stream = stderr or sys.stderr
@@ -36,9 +37,7 @@ def fetch_tags(
             client = create_jmcomic_client(proxy)
             fetch_one = lambda cid: fetch_comic_jmcomic(client, cid)
         else:
-            email, password = require_bika_credentials()
-            bika = BikaClient(email, password, proxy=proxy)
-            bika.login()
+            bika = open_bika_client(proxy, credentials_path=credentials_path)
             client = bika
             fetch_one = lambda cid: fetch_comic_bika(bika, cid)
 

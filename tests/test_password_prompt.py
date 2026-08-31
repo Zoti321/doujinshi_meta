@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from doujinshi_tag_getter import config
@@ -24,7 +26,9 @@ def test_password_input_ok_without_msystem(monkeypatch: pytest.MonkeyPatch) -> N
 
 def test_falls_back_to_visible_input_when_getpass_broken(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
+    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
     monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     monkeypatch.setenv("MSYSTEM", "MINGW64")
@@ -37,10 +41,11 @@ def test_falls_back_to_visible_input_when_getpass_broken(
     monkeypatch.setattr(config.getpass, "getpass", fake_getpass)
     monkeypatch.setattr("builtins.input", lambda _msg: "visible-pass")
 
-    email, password = config.require_bika_credentials(
+    creds = config.require_bika_credentials(
         prompt=lambda _m: "user@example.com",
+        credentials_path=tmp_path / "credentials.toml",
     )
 
-    assert email == "user@example.com"
-    assert password == "visible-pass"
+    assert creds.account == "user@example.com"
+    assert creds.password == "visible-pass"
     assert getpass_calls == []

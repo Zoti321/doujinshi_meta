@@ -1,36 +1,64 @@
 # 凭证与代理
 
 > 对应 ticket：[代理与哔咔凭证本地管理方案](../.wayfinder/tickets/007-grilling-credentials-proxy.md)  
+> 决策补充：[ADR 0001：用户本机持久化哔咔凭证](./adr/0001-persist-bika-credentials-locally.md)  
 > 调研依据：[pica-cli 哔咔认证与代理调研](./research/pica-cli-bika-auth.md)
 
 ## 哔咔：用户凭证
 
-**禁止**将账号写入仓库或配置文件。解析顺序：
+**禁止**将账号写入仓库或提交到 git。允许写入**用户目录**下的独立凭证文件（明文；创建时尽量 `0600`）。
 
-1. 环境变量 `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`（两者均非空则直接使用）
-2. 否则在交互终端提示手动输入（密码优先 `getpass` 掩码；**Git Bash / mintty 下 `getpass` 无法读键，自动改用可见输入并警告**）
-3. 非交互且无 env（如管道 EOF）→ 报错退出
+解析顺序（高 → 低；按字段拼接）：
+
+1. 环境变量 `DTG_BIKA_ACCOUNT` / `DTG_BIKA_PASSWORD`（`DTG_BIKA_EMAIL` 为短期兼容别名）
+2. 用户目录 `credentials.toml`（与 `config.toml` 同目录）
+3. 交互终端提示手动输入（密码优先 `getpass` 掩码；**Git Bash / mintty 下 `getpass` 无法读键，自动改用可见输入并警告**）
+4. 非交互且仍缺字段（如管道 EOF）→ 报错退出
 
 | 变量 | 说明 |
 |------|------|
-| `DTG_BIKA_EMAIL` | 登录邮箱（可选；缺失则提示输入） |
-| `DTG_BIKA_PASSWORD` | 登录密码（可选；缺失则提示输入） |
+| `DTG_BIKA_ACCOUNT` | 登录账号（可选；缺失则读文件或提示输入） |
+| `DTG_BIKA_EMAIL` | `DTG_BIKA_ACCOUNT` 的短期兼容别名 |
+| `DTG_BIKA_PASSWORD` | 登录密码（可选；缺失则读文件或提示输入） |
 
-用户 **只需** 提供上述两项。`api-key`、HMAC 签名密钥、App 模拟头等 **客户端常量** 由代码内置，无需用户配置（参见 [`CONTEXT.md`](../CONTEXT.md)）。
+用户 **只需** 提供账号与密码。`api-key`、HMAC 签名密钥、App 模拟头等 **客户端常量** 由代码内置，无需用户配置（参见 [`CONTEXT.md`](../CONTEXT.md)）。
+
+### 自动保存
+
+仅当本次有字段来自**交互输入**，且 **登录成功** 后，静默写入 `credentials.toml`。纯 env / 纯已存文件命中则不写。
+
+已存凭证导致**登录/鉴权失败**时：保留文件，本次忽略文件并重新交互；成功则覆盖。网络连接失败不触发该重试。
 
 流程：解析凭证 → `POST /auth/sign-in` → token **内存持有** → 401 自动重登。
 
 禁漫 **不需要** 账号。
 
 ```bash
-# 方式 A：环境变量
-export DTG_BIKA_EMAIL="your@email.com"
+# 方式 A：环境变量（适合 CI / 脚本；不会回写 credentials.toml）
+export DTG_BIKA_ACCOUNT="your-account"
 export DTG_BIKA_PASSWORD="your-password"
 uv run dtg fetch --source bika --ids abc123
 
-# 方式 B：直接运行，按提示输入
+# 方式 B：直接运行，按提示输入（登录成功后自动保存到用户目录）
 uv run dtg fetch --source bika --ids abc123
+
+# 查看 / 清除已存凭证（密码永不打印）
+uv run dtg config show
+uv run dtg config unset bika-credentials
 ```
+
+`credentials.toml` 示例（勿提交仓库）：
+
+```toml
+# doujinshi-tag-getter credentials (plaintext; keep private)
+bika_account = "your-account"
+bika_password = "your-password"
+```
+
+默认路径：
+
+- Windows：`%APPDATA%\doujinshi-tag-getter\credentials.toml`
+- Linux/macOS：`~/.config/doujinshi-tag-getter/credentials.toml`
 
 > **Token 缓存**：首版不持久化，每次进程启动重新 login；全量爬取阶段若需减少 login 频率，再考虑可选用户目录缓存。
 
@@ -84,7 +112,7 @@ uv run dtg fetch --source bika --ids abc123
 - Linux/macOS：`~/.config/doujinshi-tag-getter/config.toml`
 
 ```bash
-# 查看当前配置
+# 查看当前配置（含已存哔咔账号掩码，不含密码）
 dtg config show
 
 # 设置代理（持久）
@@ -93,7 +121,10 @@ dtg config set proxy http://127.0.0.1:7890
 # 清除代理（恢复默认直连）
 dtg config unset proxy
 
-# 指定配置文件（可选）
+# 清除已存哔咔凭证
+dtg config unset bika-credentials
+
+# 指定配置文件（可选；credentials.toml 与其同目录）
 dtg --config /path/to/config.toml catalog --source bika
 ```
 
@@ -147,7 +178,7 @@ def resolve_proxy(
     return os.environ.get("DTG_PROXY") or None
 ```
 
-- 日志永不打印密码；代理 URL 可打印（无敏感信息）
+- 日志与 `config show` 永不打印密码；代理 URL 可打印（无敏感信息）
 
 ---
 
@@ -155,11 +186,11 @@ def resolve_proxy(
 
 | 项 | 决定 |
 |----|------|
-| 用户凭证 | `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`；缺失时交互提示输入 |
+| 用户凭证 | `DTG_BIKA_ACCOUNT` / `DTG_BIKA_PASSWORD`（兼容 `DTG_BIKA_EMAIL`）；文件与交互补齐；交互且登录成功后写入 `credentials.toml` |
 | 客户端常量 | 硬编码于 `bika.py`；密钥轮换时改代码或后续加 `DTG_BIKA_SECRET_KEY` 覆盖 |
 | Token | 首版内存持有，401 重登；持久化缓存延后 |
 | 代理 | **非 API 必填**；默认直连，手动启用 |
 | 失败提示 | 直连+网络失败 → 提示配置代理；已设代理或登录/鉴权失败 → 不主推「去设代理」 |
-| 配置接口 | `dtg config set/unset/show` + `config.toml` + `--proxy` / `--no-proxy` + `DTG_PROXY` |
+| 配置接口 | `dtg config set/unset/show` + `config.toml` / `credentials.toml` + `--proxy` / `--no-proxy` + `DTG_PROXY` |
 | 系统 `HTTPS_PROXY` | **不自动继承**（避免无意走代理） |
 | 主要运行环境 | 国内本地 Windows；失败时再配代理 |

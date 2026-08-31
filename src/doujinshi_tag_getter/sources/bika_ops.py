@@ -1,9 +1,48 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Iterator
 
+from doujinshi_tag_getter.config import (
+    is_bika_network_error,
+    require_bika_credentials,
+    save_bika_credentials,
+)
 from doujinshi_tag_getter.models import ComicTagsItem, TagKind, TagRef
 from doujinshi_tag_getter.sources.bika import BikaClient
+
+
+def open_bika_client(
+    proxy: str | None = None,
+    *,
+    credentials_path: Path | None = None,
+) -> BikaClient:
+    """Resolve credentials, login, and persist after interactive success."""
+    creds = require_bika_credentials(credentials_path=credentials_path)
+    client = BikaClient(creds.account, creds.password, proxy=proxy)
+    try:
+        try:
+            client.login()
+        except RuntimeError as exc:
+            if not creds.from_file or is_bika_network_error(exc):
+                raise
+            client.close()
+            creds = require_bika_credentials(
+                credentials_path=credentials_path,
+                ignore_stored=True,
+            )
+            client = BikaClient(creds.account, creds.password, proxy=proxy)
+            client.login()
+        if creds.from_interactive:
+            save_bika_credentials(
+                creds.account,
+                creds.password,
+                path=credentials_path,
+            )
+        return client
+    except Exception:
+        client.close()
+        raise
 
 
 def extract_tags_bika(comic: dict) -> list[TagRef]:

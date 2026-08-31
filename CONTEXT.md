@@ -38,8 +38,8 @@
 
 ## 哔咔：用户凭证（User Credentials）
 
-用户需提供的秘密信息，仅 **邮箱 + 密码**。优先读环境变量 `DTG_BIKA_EMAIL` / `DTG_BIKA_PASSWORD`；缺失时在交互终端提示手动输入。
-_Avoid_: 账号 token、api-key、签名密钥（这些不是用户配置项）
+用户需提供的秘密信息，仅 **账号 + 密码**。导线层字段名可能叫 `email`，领域仍称「账号」（值可以是邮箱形态的字符串）。
+_Avoid_: 邮箱（作领域名）、账号 token、api-key、签名密钥（这些不是用户配置项）
 
 ## 哔咔：客户端常量（Client Constants）
 

@@ -6,10 +6,9 @@ import time
 from pathlib import Path
 from typing import TextIO
 
-from doujinshi_tag_getter.config import require_bika_credentials
 from doujinshi_tag_getter.models import CatalogStats, Source, TagCatalogResponse, utc_now_iso
 from doujinshi_tag_getter.sources.bika import BikaClient
-from doujinshi_tag_getter.sources.bika_ops import extract_tags_bika
+from doujinshi_tag_getter.sources.bika_ops import extract_tags_bika, open_bika_client
 from doujinshi_tag_getter.sources.jmcomic_ops import create_jmcomic_client, extract_tags_jmcomic
 from doujinshi_tag_getter.tag_counter import TagCounter
 
@@ -29,6 +28,7 @@ def build_catalog(
     checkpoint: Path | None = None,
     resume: bool = False,
     stderr: TextIO | None = None,
+    credentials_path: Path | None = None,
 ) -> TagCatalogResponse:
     src = Source(source)
     err_stream = stderr or sys.stderr
@@ -80,9 +80,7 @@ def build_catalog(
             yield from iter_comic_ids_jmcomic(client)
 
     else:
-        email, password = require_bika_credentials()
-        bika = BikaClient(email, password, proxy=proxy)
-        bika.login()
+        bika = open_bika_client(proxy, credentials_path=credentials_path)
         client = bika
 
         def fetch_tags_for_id(cid: str):
