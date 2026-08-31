@@ -13,7 +13,7 @@ def test_to_entries_filters_by_kind() -> None:
     counter.absorb(
         [
             TagRef(kind="tag", name="巨乳"),
-            TagRef(kind="work", name="原神"),
+            TagRef(kind="parody", name="原神"),
             TagRef(kind="author", name="作者A"),
         ]
     )
@@ -30,7 +30,7 @@ def test_to_entries_without_kinds_returns_all() -> None:
     counter.absorb(
         [
             TagRef(kind="tag", name="a"),
-            TagRef(kind="work", name="b"),
+            TagRef(kind="parody", name="b"),
         ]
     )
 

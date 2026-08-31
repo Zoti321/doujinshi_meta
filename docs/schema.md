@@ -21,7 +21,7 @@
 | **无内置存储** | 不写 SQLite；可选 `-o path.json` 写文件，默认打印 stdout |
 | **稳定 JSON 契约** | 版本字段 + JSON Schema，供 Flutter `jsonDecode` / 代码生成 |
 | **双入口** | CLI（子进程集成）+ Python 库 API（同结构 dataclass） |
-| **kind 分维** | 禁漫 `works`/`actors`/`authors` 与 `tags` 分开，不混数组 |
+| **kind 分维** | 禁漫原作/角色/作者与自由标签分维（`parody`/`character`/`author`/`tag`），不混数组 |
 
 ---
 
@@ -33,15 +33,16 @@
 
 ### TagKind
 
-`"tag"` | `"category"` | `"work"` | `"actor"` | `"author"`
+`"tag"` | `"parody"` | `"character"` | `"author"`
 
 | kind | 哔咔 | 禁漫 |
 |------|------|------|
 | `tag` | `comic.tags[]` | `album.tags[]` |
-| `category` | `comic.categories[]` | — |
-| `work` | — | `album.works[]` |
-| `actor` | — | `album.actors[]` |
+| `parody` | — | `album.works[]` |
+| `character` | — | `album.actors[]` |
 | `author` | `comic.author` | `album.authors[]` |
+
+哔咔 `comic.categories[]` **不**进入词表/fetch（平台分区仅用于本子枚举）。旧字面量 `category` / `work` / `actor` 已废弃（硬切，无读写别名）。
 
 ---
 
@@ -94,7 +95,6 @@ v1 按 **source 分词表**，不做跨站合并。
       "title": "[xx组] 示例标题",
       "tags": [
         { "kind": "tag", "name": "全彩" },
-        { "kind": "category", "name": "同人" },
         { "kind": "author", "name": "作者名" }
       ]
     }

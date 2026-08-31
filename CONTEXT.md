@@ -10,9 +10,14 @@
 
 ## Tag Kind（标签维度）
 
+契约中的标签维度字面量（与来源站 API 字段名无关）：
+
 - `tag` — 自由标签
-- `category` — 平台分区（哔咔）
-- `work` / `actor` / `author` — 禁漫元数据维度
+- `parody` — 原作、IP 或被同人化的系列
+- `character` — 登场角色
+- `author` — 作者
+
+_Avoid_: `work`、`actor`（旧 Kind 名）；`category`（不再作为 Tag Kind——平台分区只用于本子枚举，不进入词表/fetch）
 
 ## Kind 过滤（Kind Filter）
 

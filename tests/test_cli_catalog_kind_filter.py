@@ -87,12 +87,13 @@ def test_catalog_invalid_kind_for_source_exits_2() -> None:
     assert result.exit_code == 2
     assert "category" in result.stderr
     assert "tag" in result.stderr
+    assert "parody" in result.stderr
 
 
 def test_catalog_table_with_kind_shows_filtered_rows() -> None:
     tags = [
         TagCatalogEntry(kind="tag", name="巨乳", count=10),
-        TagCatalogEntry(kind="work", name="原神", count=3),
+        TagCatalogEntry(kind="parody", name="原神", count=3),
     ]
     with patch(
         "doujinshi_tag_getter.cli.build_catalog",

@@ -49,8 +49,6 @@ def extract_tags_bika(comic: dict) -> list[TagRef]:
     tags: list[TagRef] = []
     for name in comic.get("tags") or []:
         tags.append(TagRef(kind=TagKind.TAG, name=name))
-    for name in comic.get("categories") or []:
-        tags.append(TagRef(kind=TagKind.CATEGORY, name=name))
     author = comic.get("author")
     if author:
         tags.append(TagRef(kind=TagKind.AUTHOR, name=author))

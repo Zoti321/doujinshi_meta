@@ -34,7 +34,7 @@ flowchart LR
 | 1 | `GET /categories` | 获取全部分区 `title` |
 | 2 | `GET /comics?c={title}&page={n}&s=dd` | 每分类按「新→旧」分页，直到 `page > pages` |
 | 3 | 收集 `docs[*]._id` | 全局 `seen_ids` 去重 |
-| 4 | `GET /comics/{id}` | 逐本取 `tags` / `categories` / `author` |
+| 4 | `GET /comics/{id}` | 逐本取 `tags` / `author`（`categories` 不入词表） |
 
 **排序 `s=dd`**：优先抓新本；全量需扫完所有页。
 

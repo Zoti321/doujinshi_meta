@@ -43,9 +43,9 @@ def extract_tags_jmcomic(album) -> list[TagRef]:
     for name in album.tags or []:
         tags.append(TagRef(kind=TagKind.TAG, name=name))
     for name in album.works or []:
-        tags.append(TagRef(kind=TagKind.WORK, name=name))
+        tags.append(TagRef(kind=TagKind.PARODY, name=name))
     for name in album.actors or []:
-        tags.append(TagRef(kind=TagKind.ACTOR, name=name))
+        tags.append(TagRef(kind=TagKind.CHARACTER, name=name))
     for name in album.authors or []:
         tags.append(TagRef(kind=TagKind.AUTHOR, name=name))
     return tags

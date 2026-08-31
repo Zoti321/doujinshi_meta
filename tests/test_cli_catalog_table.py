@@ -21,7 +21,7 @@ def _sample_catalog(*, tags: list[TagCatalogEntry] | None = None) -> TagCatalogR
         if tags is not None
         else [
             TagCatalogEntry(kind="tag", name="巨乳", count=10),
-            TagCatalogEntry(kind="work", name="原神", count=3),
+            TagCatalogEntry(kind="parody", name="原神", count=3),
         ],
     )
 

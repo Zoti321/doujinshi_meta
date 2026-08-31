@@ -13,15 +13,16 @@ class Source(StrEnum):
 
 class TagKind(StrEnum):
     TAG = "tag"
-    CATEGORY = "category"
-    WORK = "work"
-    ACTOR = "actor"
+    PARODY = "parody"
+    CHARACTER = "character"
     AUTHOR = "author"
 
 
 SOURCE_KINDS: dict[Source, frozenset[str]] = {
-    Source.BIKA: frozenset({TagKind.TAG, TagKind.CATEGORY, TagKind.AUTHOR}),
-    Source.JMCOMIC: frozenset({TagKind.TAG, TagKind.WORK, TagKind.ACTOR, TagKind.AUTHOR}),
+    Source.BIKA: frozenset({TagKind.TAG, TagKind.AUTHOR}),
+    Source.JMCOMIC: frozenset(
+        {TagKind.TAG, TagKind.PARODY, TagKind.CHARACTER, TagKind.AUTHOR}
+    ),
 }
 
 
