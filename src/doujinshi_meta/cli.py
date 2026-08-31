@@ -31,12 +31,7 @@ app.add_typer(config_app, name="config")
 
 
 def run() -> None:
-    """Console entry for ``djm`` and deprecated ``dtg``."""
-    if Path(sys.argv[0]).stem.lower() == "dtg":
-        print(
-            "警告: `dtg` 已弃用，请改用 `djm`（将在 0.3.0 移除）。",
-            file=sys.stderr,
-        )
+    """Console entry for ``djm``."""
     app()
 
 

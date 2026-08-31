@@ -2,7 +2,15 @@
 
 从哔咔、禁漫天堂爬取本子元数据（标题、多维 Tag 等），JSON 输出，供 Flutter 等项目集成。
 
-CLI 主命令：`djm`（兼容别名 `dtg`，将在 0.3.0 移除）。
+CLI 主命令：`djm`。
+
+## 0.3.0 破坏性变更
+
+自 0.3.0 起已移除：
+
+- CLI 别名 `dtg`（请改用 `djm`）
+- 环境变量前缀 `DTG_*`（请改用 `DJM_PROXY`、`DJM_BIKA_ACCOUNT`、`DJM_BIKA_PASSWORD`）
+- 从 `doujinshi-tag-getter` 用户目录的自动配置迁移（请手动复制到 `doujinshi-meta` 目录，或先使用 0.2.x 完成迁移）
 
 ## 安装
 

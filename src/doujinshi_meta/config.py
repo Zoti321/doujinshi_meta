@@ -2,16 +2,12 @@ from __future__ import annotations
 
 import getpass
 import os
-import shutil
 import sys
-import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 APP_NAME = "doujinshi-meta"
-LEGACY_APP_NAME = "doujinshi-tag-getter"
-_MIGRATE_FILENAMES = ("config.toml", "credentials.toml")
 
 
 def _platform_user_config_dir(app_name: str) -> Path:
@@ -24,60 +20,9 @@ def config_dir() -> Path:
     return _platform_user_config_dir(APP_NAME)
 
 
-def legacy_config_dir() -> Path:
-    return _platform_user_config_dir(LEGACY_APP_NAME)
-
-
-def migrate_user_config(
-    *,
-    new_dir: Path | None = None,
-    legacy_dir: Path | None = None,
-) -> list[str]:
-    """Copy legacy user config files into the new app dir when missing.
-
-    Does not overwrite files that already exist in ``new_dir``. Returns the
-    basenames that were copied. Legacy files are left in place.
-    """
-    dest = new_dir if new_dir is not None else config_dir()
-    src = legacy_dir if legacy_dir is not None else legacy_config_dir()
-    if not src.is_dir():
-        return []
-    migrated: list[str] = []
-    for name in _MIGRATE_FILENAMES:
-        src_file = src / name
-        dest_file = dest / name
-        if not src_file.is_file() or dest_file.exists():
-            continue
-        dest.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src_file, dest_file)
-        migrated.append(name)
-    return migrated
-
-
-def _ensure_defaults_migrated() -> None:
-    migrated = migrate_user_config()
-    if migrated:
-        print(
-            f"已从 {LEGACY_APP_NAME} 迁移配置到 {APP_NAME}："
-            f"{', '.join(migrated)}。旧目录可手动删除。",
-            file=sys.stderr,
-        )
-
-
-DEFAULT_CONFIG_PATH = config_dir() / "config.toml"
-DEFAULT_CREDENTIALS_PATH = config_dir() / "credentials.toml"
-
-
 def default_config_path() -> Path:
-    """User config.toml path; migrates legacy app dir on first use."""
-    _ensure_defaults_migrated()
+    """User config.toml path."""
     return config_dir() / "config.toml"
-
-
-def default_credentials_path() -> Path:
-    """User credentials.toml path; migrates legacy app dir on first use."""
-    _ensure_defaults_migrated()
-    return config_dir() / "credentials.toml"
 
 
 @dataclass
@@ -102,7 +47,6 @@ class ResolvedBikaCredentials:
 def credentials_path_beside(config_path: Path | None = None) -> Path:
     """credentials.toml next to config.toml (or the default user dir)."""
     if config_path is None:
-        _ensure_defaults_migrated()
         return config_dir() / "credentials.toml"
     return config_path.parent / "credentials.toml"
 
@@ -152,22 +96,14 @@ def _parse_bika_credentials(text: str) -> BikaStoredCredentials | None:
 
 
 def load_config(path: Path | None = None) -> UserConfig:
-    if path is None:
-        _ensure_defaults_migrated()
-        config_path = config_dir() / "config.toml"
-    else:
-        config_path = path
+    config_path = config_dir() / "config.toml" if path is None else path
     if not config_path.is_file():
         return UserConfig()
     return _parse_toml_proxy(config_path.read_text(encoding="utf-8"))
 
 
 def save_config(cfg: UserConfig, path: Path | None = None) -> Path:
-    if path is None:
-        _ensure_defaults_migrated()
-        config_path = config_dir() / "config.toml"
-    else:
-        config_path = path
+    config_path = config_dir() / "config.toml" if path is None else path
     config_path.parent.mkdir(parents=True, exist_ok=True)
     lines = ["# doujinshi-meta user config", "# proxy: omit for direct connection (default)"]
     if cfg.proxy:
@@ -177,11 +113,7 @@ def save_config(cfg: UserConfig, path: Path | None = None) -> Path:
 
 
 def load_bika_credentials(path: Path | None = None) -> BikaStoredCredentials | None:
-    if path is None:
-        _ensure_defaults_migrated()
-        cred_path = config_dir() / "credentials.toml"
-    else:
-        cred_path = path
+    cred_path = config_dir() / "credentials.toml" if path is None else path
     if not cred_path.is_file():
         return None
     return _parse_bika_credentials(cred_path.read_text(encoding="utf-8"))
@@ -192,11 +124,7 @@ def save_bika_credentials(
     password: str,
     path: Path | None = None,
 ) -> Path:
-    if path is None:
-        _ensure_defaults_migrated()
-        cred_path = config_dir() / "credentials.toml"
-    else:
-        cred_path = path
+    cred_path = config_dir() / "credentials.toml" if path is None else path
     cred_path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
         "# doujinshi-meta credentials (plaintext; keep private)",
@@ -212,11 +140,7 @@ def save_bika_credentials(
 
 
 def clear_bika_credentials(path: Path | None = None) -> Path:
-    if path is None:
-        _ensure_defaults_migrated()
-        cred_path = config_dir() / "credentials.toml"
-    else:
-        cred_path = path
+    cred_path = config_dir() / "credentials.toml" if path is None else path
     if cred_path.is_file():
         cred_path.unlink()
     return cred_path
@@ -243,14 +167,6 @@ def resolve_proxy(
     djm = os.environ.get("DJM_PROXY")
     if djm:
         return djm
-    dtg = os.environ.get("DTG_PROXY")
-    if dtg:
-        warnings.warn(
-            "DTG_PROXY is deprecated; use DJM_PROXY instead (removed in 0.3.0)",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return dtg
     return None
 
 
@@ -279,35 +195,11 @@ def _default_get_password(message: str) -> str:
 
 
 def _env_bika_account() -> str:
-    djm = (os.environ.get("DJM_BIKA_ACCOUNT") or "").strip()
-    if djm:
-        return djm
-    legacy = (
-        os.environ.get("DTG_BIKA_ACCOUNT") or os.environ.get("DTG_BIKA_EMAIL") or ""
-    ).strip()
-    if legacy:
-        warnings.warn(
-            "DTG_BIKA_ACCOUNT / DTG_BIKA_EMAIL are deprecated; "
-            "use DJM_BIKA_ACCOUNT instead (removed in 0.3.0)",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    return legacy
+    return (os.environ.get("DJM_BIKA_ACCOUNT") or "").strip()
 
 
 def _env_bika_password() -> str:
-    djm = os.environ.get("DJM_BIKA_PASSWORD") or ""
-    if djm:
-        return djm
-    legacy = os.environ.get("DTG_BIKA_PASSWORD") or ""
-    if legacy:
-        warnings.warn(
-            "DTG_BIKA_PASSWORD is deprecated; use DJM_BIKA_PASSWORD instead "
-            "(removed in 0.3.0)",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    return legacy
+    return os.environ.get("DJM_BIKA_PASSWORD") or ""
 
 
 def require_bika_credentials(
@@ -319,16 +211,13 @@ def require_bika_credentials(
 ) -> ResolvedBikaCredentials:
     """Resolve Bika credentials: env → credentials file → interactive.
 
-    Field-wise merge is allowed. ``DJM_BIKA_ACCOUNT`` is preferred;
-    ``DTG_BIKA_*`` / ``DTG_BIKA_EMAIL`` remain compatibility aliases until 0.3.0.
+    Field-wise merge is allowed via ``DJM_BIKA_ACCOUNT`` / ``DJM_BIKA_PASSWORD``.
     """
     ask = prompt or (lambda message: input(message))
     ask_password = get_password or _default_get_password
-    if credentials_path is not None:
-        cred_path = credentials_path
-    else:
-        _ensure_defaults_migrated()
-        cred_path = config_dir() / "credentials.toml"
+    cred_path = (
+        credentials_path if credentials_path is not None else config_dir() / "credentials.toml"
+    )
 
     account = _env_bika_account()
     password = _env_bika_password()

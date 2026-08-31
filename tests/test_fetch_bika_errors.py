@@ -29,8 +29,8 @@ def _install_connect_error(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_fetch_tags_direct_connect_error_hints_proxy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "user@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "user@example.com")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "secret")
     _install_connect_error(monkeypatch)
 
     with pytest.raises(RuntimeError, match=r"djm config set proxy|`--proxy`") as exc_info:
@@ -43,8 +43,8 @@ def test_fetch_tags_direct_connect_error_hints_proxy(
 def test_fetch_tags_proxied_connect_error_does_not_hint_set_proxy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "user@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "user@example.com")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "secret")
     _install_connect_error(monkeypatch)
 
     with pytest.raises(RuntimeError) as exc_info:
@@ -78,8 +78,8 @@ def _install_login_payload(monkeypatch: pytest.MonkeyPatch, payload: dict) -> No
 def test_fetch_tags_login_missing_token_does_not_hint_proxy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "user@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "user@example.com")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "secret")
     _install_login_payload(monkeypatch, {"code": 200, "data": {}})
 
     with pytest.raises(RuntimeError, match="登录|账号|密码") as exc_info:
@@ -93,8 +93,8 @@ def test_fetch_tags_login_missing_token_does_not_hint_proxy(
 def test_fetch_tags_login_missing_data_does_not_hint_proxy(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "user@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "user@example.com")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "secret")
     _install_login_payload(monkeypatch, {"code": 200, "message": "success"})
 
     with pytest.raises(RuntimeError, match="登录|账号|密码") as exc_info:

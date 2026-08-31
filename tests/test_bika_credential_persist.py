@@ -54,9 +54,6 @@ def test_open_saves_when_prompted(
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     _install_login_sequence(monkeypatch, [_login_payload("tok")])
 
@@ -85,8 +82,8 @@ def test_open_does_not_save_when_from_env(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     path = tmp_path / "credentials.toml"
-    monkeypatch.setenv("DTG_BIKA_ACCOUNT", "env@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "env-pass")
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "env@example.com")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "env-pass")
     _install_login_sequence(monkeypatch, [_login_payload("tok")])
 
     client = open_bika_client(credentials_path=path)
@@ -100,9 +97,6 @@ def test_open_does_not_save_when_from_file_only(
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     save_bika_credentials("file@example.com", "file-pass", path=path)
     _install_login_sequence(monkeypatch, [_login_payload("tok")])
@@ -120,9 +114,6 @@ def test_open_reprompts_on_file_auth_failure_then_saves(
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     save_bika_credentials("bad@example.com", "bad-pass", path=path)
     attempts = _install_login_sequence(
@@ -174,9 +165,6 @@ def test_open_does_not_reprompt_on_network_error_with_file(
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     save_bika_credentials("file@example.com", "file-pass", path=path)
 

@@ -12,8 +12,8 @@ from doujinshi_meta.config import (
 
 
 def test_uses_env_account_when_both_set(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("DTG_BIKA_ACCOUNT", "user@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "user@example.com")
+    monkeypatch.setenv("DJM_BIKA_PASSWORD", "secret")
     prompts: list[str] = []
 
     creds = require_bika_credentials(
@@ -29,35 +29,11 @@ def test_uses_env_account_when_both_set(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert prompts == []
 
 
-def test_accepts_legacy_email_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "legacy@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
-
-    creds = require_bika_credentials(credentials_path=tmp_path / "credentials.toml")
-
-    assert creds.account == "legacy@example.com"
-    assert creds.password == "secret"
-
-
-def test_prefers_account_env_over_email(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.setenv("DTG_BIKA_ACCOUNT", "new@example.com")
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "old@example.com")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "secret")
-
-    creds = require_bika_credentials(credentials_path=tmp_path / "credentials.toml")
-
-    assert creds.account == "new@example.com"
-
-
 def test_prompts_when_env_and_file_missing(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     prompts: list[str] = []
     password_prompts: list[str] = []
 
@@ -77,9 +53,6 @@ def test_prompts_when_env_and_file_missing(
 def test_loads_from_credentials_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     save_bika_credentials("file@example.com", "file-pass", path=path)
 
@@ -98,9 +71,8 @@ def test_loads_from_credentials_file(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 def test_merges_env_account_with_file_password(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setenv("DTG_BIKA_ACCOUNT", "env@example.com")
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "env@example.com")
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     save_bika_credentials("file@example.com", "file-pass", path=path)
 
@@ -114,9 +86,6 @@ def test_merges_env_account_with_file_password(
 def test_ignore_stored_skips_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     path = tmp_path / "credentials.toml"
     save_bika_credentials("file@example.com", "file-pass", path=path)
 
@@ -136,9 +105,6 @@ def test_ignore_stored_skips_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
 def test_prompts_when_env_empty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("DJM_BIKA_ACCOUNT", "")
     monkeypatch.setenv("DJM_BIKA_PASSWORD", "")
-    monkeypatch.setenv("DTG_BIKA_ACCOUNT", "")
-    monkeypatch.setenv("DTG_BIKA_EMAIL", "")
-    monkeypatch.setenv("DTG_BIKA_PASSWORD", "")
 
     creds = require_bika_credentials(
         prompt=lambda _msg: "  a@b.com  ",
@@ -155,9 +121,6 @@ def test_rejects_empty_interactive_input(
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
 
     with pytest.raises(RuntimeError, match="不能为空"):
         require_bika_credentials(
@@ -170,9 +133,8 @@ def test_rejects_empty_interactive_input(
 def test_prompts_only_missing_password(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    monkeypatch.setenv("DTG_BIKA_ACCOUNT", "only@example.com")
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
+    monkeypatch.setenv("DJM_BIKA_ACCOUNT", "only@example.com")
+    monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
     prompts: list[str] = []
 
     creds = require_bika_credentials(
@@ -190,9 +152,6 @@ def test_prompts_only_missing_password(
 def test_eof_during_prompt_raises(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
 
     def boom(_msg: str) -> str:
         raise EOFError

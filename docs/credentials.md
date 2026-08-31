@@ -10,8 +10,8 @@
 
 解析顺序（高 → 低；按字段拼接）：
 
-1. 环境变量 `DJM_BIKA_ACCOUNT` / `DJM_BIKA_PASSWORD`（兼容期内仍可读旧前缀 `DTG_BIKA_*`；`DTG_BIKA_EMAIL` 仍为账号字段的遗留别名）
-2. 用户目录 `credentials.toml`（与 `config.toml` 同目录；默认目录名为 `doujinshi-meta`，首次使用时会从旧目录 `doujinshi-tag-getter` 自动迁移缺失文件）
+1. 环境变量 `DJM_BIKA_ACCOUNT` / `DJM_BIKA_PASSWORD`
+2. 用户目录 `credentials.toml`（与 `config.toml` 同目录；默认目录名为 `doujinshi-meta`）
 3. 交互终端提示手动输入（密码优先 `getpass` 掩码；**Git Bash / mintty 下 `getpass` 无法读键，自动改用可见输入并警告**）
 4. 非交互且仍缺字段（如管道 EOF）→ 报错退出
 
@@ -19,7 +19,6 @@
 |------|------|
 | `DJM_BIKA_ACCOUNT` | 登录账号（可选；缺失则读文件或提示输入） |
 | `DJM_BIKA_PASSWORD` | 登录密码（可选；缺失则读文件或提示输入） |
-| `DTG_BIKA_*` / `DTG_BIKA_EMAIL` | 兼容别名（0.2.x 可读并发弃用警告；计划 0.3.0 移除） |
 
 用户 **只需** 提供账号与密码。`api-key`、HMAC 签名密钥、App 模拟头等 **客户端常量** 由代码内置，无需用户配置（参见 [`CONTEXT.md`](../CONTEXT.md)）。
 
@@ -186,12 +185,12 @@ def resolve_proxy(
 
 | 项 | 决定 |
 |----|------|
-| 用户凭证 | `DJM_BIKA_ACCOUNT` / `DJM_BIKA_PASSWORD`（兼容 `DTG_*` / `DTG_BIKA_EMAIL` 至 0.3.0）；文件与交互补齐；交互且登录成功后写入 `credentials.toml` |
+| 用户凭证 | `DJM_BIKA_ACCOUNT` / `DJM_BIKA_PASSWORD`；文件与交互补齐；交互且登录成功后写入 `credentials.toml` |
 | 客户端常量 | 硬编码于 `bika.py`；密钥轮换时改代码或后续加高级 env 覆盖 |
 | Token | 首版内存持有，401 重登；持久化缓存延后 |
 | 代理 | **非 API 必填**；默认直连，手动启用 |
 | 失败提示 | 直连+网络失败 → 提示配置代理；已设代理或登录/鉴权失败 → 不主推「去设代理」 |
 | 配置接口 | `djm config set/unset/show` + `config.toml` / `credentials.toml` + `--proxy` / `--no-proxy` + `DJM_PROXY` |
-| 配置目录 | `doujinshi-meta`；首次使用时从 `doujinshi-tag-getter` 迁移缺失文件 |
+| 配置目录 | `doujinshi-meta` |
 | 系统 `HTTPS_PROXY` | **不自动继承**（避免无意走代理） |
 | 主要运行环境 | 国内本地 Windows；失败时再配代理 |

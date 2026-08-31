@@ -1,6 +1,6 @@
 [project]
 name = "doujinshi-meta"
-version = "0.2.0"
+version = "0.3.0"
 description = "CLI tool to crawl doujinshi metadata from Bika and JMComic"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,7 +13,6 @@ dependencies = [
 
 [project.scripts]
 djm = "doujinshi_meta.cli:run"
-dtg = "doujinshi_meta.cli:run"
 
 [build-system]
 requires = ["hatchling"]

@@ -6,7 +6,7 @@ status: open
 
 ## Destination
 
-交付 **`uv` 管理的 Python 包** `doujinshi-meta`（CLI：`djm`；兼容别名 `dtg` 至 0.3.0），无数据库，**stdout / 文件输出 JSON**，便于 Flutter 等项目集成：
+交付 **`uv` 管理的 Python 包** `doujinshi-meta`（CLI：`djm`），无数据库，**stdout / 文件输出 JSON**，便于 Flutter 等项目集成：
 
 1. **`djm catalog`** — 全量爬取，构建 **tag 词表**（仅 tags，无 album 持久化）
 2. **`djm fetch`** — 单个/批量爬取本子元数据（含 tag 列表），JSON 输出
@@ -29,7 +29,8 @@ status: open
 - [按需爬取 CLI 接口形态](tickets/006-grilling-on-demand-cli.md) — `catalog` / `fetch` 子命令；stdout JSON；Flutter 子进程集成
 - [全量爬取遍历与限速策略](tickets/005-grilling-full-crawl-strategy.md) — 分类分页 / categories_filter_gen；串行+延迟；checkpoint JSON；见 `docs/crawl-strategy.md`
 - [代理与哔咔凭证本地管理方案](tickets/007-grilling-credentials-proxy.md) — 哔咔环境变量；**默认直连**；`djm config` / `--proxy` 手动启用代理
-- [项目重命名为 doujinshi-meta](tickets/011-rename-doujinshi-meta.md) — 发行名/包/`djm`；配置目录与 `DJM_*`；`dtg`/`DTG_*` 兼容至 0.3.0；输出契约 Tag 前缀暂不动
+- [项目重命名为 doujinshi-meta](tickets/011-rename-doujinshi-meta.md) — 发行名/包/`djm`；配置目录与 `DJM_*`；0.2.0 双轨兼容（已关闭）
+- [移除 dtg / DTG_* 遗留兼容](tickets/012-remove-legacy-dtg-naming.md) — 0.3.0 删除 CLI 别名、旧 env、doujinshi-tag-getter 自动迁移
 
 ## Not yet specified
 
@@ -38,7 +39,7 @@ status: open
 
 ## 地图状态
 
-**规划已完成**（003 为可选环境自测）。008 / 009 / 010 / 011 已关闭。
+**规划已完成**（003 为可选环境自测）。008–012 已关闭。
 
 ## Out of scope
 
@@ -61,3 +62,4 @@ status: open
 | [catalog 命令可选表格输出](tickets/009-catalog-table-output.md) | task | closed | — |
 | [catalog 命令按 Tag Kind 过滤词表](tickets/010-catalog-kind-filter.md) | task | closed | — |
 | [项目重命名为 doujinshi-meta（本子元数据爬取）](tickets/011-rename-doujinshi-meta.md) | task | closed | — |
+| [移除 dtg / DTG_* 与 doujinshi-tag-getter 遗留兼容（0.3.0）](tickets/012-remove-legacy-dtg-naming.md) | task | closed | — |

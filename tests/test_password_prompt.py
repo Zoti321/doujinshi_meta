@@ -30,9 +30,6 @@ def test_falls_back_to_visible_input_when_getpass_broken(
 ) -> None:
     monkeypatch.delenv("DJM_BIKA_ACCOUNT", raising=False)
     monkeypatch.delenv("DJM_BIKA_PASSWORD", raising=False)
-    monkeypatch.delenv("DTG_BIKA_ACCOUNT", raising=False)
-    monkeypatch.delenv("DTG_BIKA_EMAIL", raising=False)
-    monkeypatch.delenv("DTG_BIKA_PASSWORD", raising=False)
     monkeypatch.setenv("MSYSTEM", "MINGW64")
     getpass_calls: list[str] = []
 
