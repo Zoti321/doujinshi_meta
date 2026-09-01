@@ -15,8 +15,7 @@ from doujinshi_meta.models import (
     utc_now_iso,
 )
 from doujinshi_meta.search import search_tags
-
-DEFAULT_DELAY = {Source.BIKA: 1.5, Source.JMCOMIC: 0.4}
+from doujinshi_meta.sources.session import DEFAULT_DELAY
 
 
 def _log(stderr: TextIO, message: str) -> None:

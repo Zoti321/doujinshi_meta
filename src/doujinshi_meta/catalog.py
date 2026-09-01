@@ -14,12 +14,8 @@ from doujinshi_meta.models import (
     utc_now_iso,
     validate_kinds_for_source,
 )
-from doujinshi_meta.sources.bika import BikaClient
-from doujinshi_meta.sources.bika_ops import extract_tags_bika, open_bika_client
-from doujinshi_meta.sources.jmcomic_ops import create_jmcomic_client, extract_tags_jmcomic
+from doujinshi_meta.sources.session import DEFAULT_DELAY, open_source_session
 from doujinshi_meta.tag_counter import TagCounter
-
-DEFAULT_DELAY = {Source.BIKA: 1.5, Source.JMCOMIC: 0.4}
 
 
 def _log(stderr: TextIO, message: str) -> None:
@@ -86,35 +82,12 @@ def build_catalog(
         }
         checkpoint.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    if src == Source.JMCOMIC:
-        client = create_jmcomic_client(proxy)
-
-        def fetch_tags_for_id(cid: str):
-            album = client.get_album_detail(cid)
-            return extract_tags_jmcomic(album)
-
-        def iter_ids():
-            from doujinshi_meta.sources.jmcomic_ops import iter_comic_ids_jmcomic
-
-            yield from iter_comic_ids_jmcomic(client)
-
-    else:
-        bika = open_bika_client(proxy, credentials_path=credentials_path)
-        client = bika
-
-        def fetch_tags_for_id(cid: str):
-            comic = bika.get_comic(cid)
-            return extract_tags_bika(comic)
-
-        def iter_ids():
-            from doujinshi_meta.sources.bika_ops import iter_comic_ids_bika
-
-            yield from iter_comic_ids_bika(bika)
+    session = open_source_session(src, proxy=proxy, credentials_path=credentials_path)
 
     try:
         if phase == "enum" and not pending_ids:
             _log(err_stream, "[catalog] enumerating comic ids...")
-            for cid in iter_ids():
+            for cid in session.iter_comic_ids():
                 if cid not in seen_ids:
                     seen_ids.add(cid)
                     pending_ids.append(cid)
@@ -129,7 +102,7 @@ def build_catalog(
         while pending_ids:
             cid = pending_ids.pop(0)
             try:
-                tags = fetch_tags_for_id(cid)
+                tags = session.fetch_comic(cid).tags
                 counter.absorb(tags)
                 stats.albums_scanned += 1
                 processed += 1
@@ -143,8 +116,7 @@ def build_catalog(
                 break
             time.sleep(wait)
     finally:
-        if src == Source.BIKA and isinstance(client, BikaClient):
-            client.close()
+        session.close()
         save_checkpoint()
 
     kind_filter = set(normalized_kinds) if normalized_kinds is not None else None

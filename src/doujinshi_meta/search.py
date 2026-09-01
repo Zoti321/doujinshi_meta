@@ -15,19 +15,9 @@ from doujinshi_meta.models import (
     Source,
     utc_now_iso,
 )
-from doujinshi_meta.sources.bika import BikaClient
-from doujinshi_meta.sources.bika_ops import fetch_comic_bika, open_bika_client, search_comics_bika
-from doujinshi_meta.sources.jmcomic_ops import (
-    create_jmcomic_client,
-    fetch_comic_jmcomic,
-    search_comics_jmcomic,
-)
+from doujinshi_meta.sources.session import DEFAULT_DELAY, SearchHit, open_source_session
 
-DEFAULT_DELAY = {Source.BIKA: 1.5, Source.JMCOMIC: 0.4}
-
-SearchHit = tuple[str, str, int | None]
 FetchOne = Callable[[str], ComicTagsItem]
-SearchFn = Callable[[object, str], tuple[list[SearchHit], int]]
 
 
 def _log(stderr: TextIO, message: str) -> None:
@@ -149,23 +139,14 @@ def search_tags(
         query=query,
         generated_at=utc_now_iso(),
     )
-    client: BikaClient | object | None = None
+    session = open_source_session(src, proxy=proxy, credentials_path=credentials_path)
 
     try:
-        if src == Source.JMCOMIC:
-            client = create_jmcomic_client(proxy)
-            search_fn: SearchFn = search_comics_jmcomic
-            fetch_one: FetchOne = lambda cid: fetch_comic_jmcomic(client, cid)
-        else:
-            bika = open_bika_client(proxy, credentials_path=credentials_path)
-            client = bika
-            search_fn = search_comics_bika
-            fetch_one = lambda cid: fetch_comic_bika(bika, cid)
-
-        hits, total_hits = search_fn(client, query)
+        hits, total_hits = session.search(query)
         response.total_hits = total_hits
         _log(err_stream, f"[search] {len(hits)} hits (total {total_hits}) for {query!r}")
 
+        fetch_one = session.fetch_comic
         scan_hits = hits[:limit]
         if pages is None:
             items, errors = _fetch_hits_without_pages(
@@ -196,7 +177,6 @@ def search_tags(
                     f"[search] ok {item.external_id} ({len(item.tags)} tags, pages={item.page_count})",
                 )
     finally:
-        if isinstance(client, BikaClient):
-            client.close()
+        session.close()
 
     return response
