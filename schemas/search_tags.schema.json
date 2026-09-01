@@ -11,7 +11,8 @@
     "total_hits",
     "generated_at",
     "items",
-    "errors"
+    "errors",
+    "ambiguous"
   ],
   "properties": {
     "schema_version": { "type": "string", "const": "1.0" },
@@ -27,6 +28,10 @@
     "errors": {
       "type": "array",
       "items": { "$ref": "#/$defs/fetchError" }
+    },
+    "ambiguous": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/searchAmbiguous" }
     }
   },
   "$defs": {
@@ -45,9 +50,32 @@
       "properties": {
         "external_id": { "type": "string" },
         "title": { "type": "string" },
+        "page_count": { "type": "integer", "minimum": 1 },
         "tags": {
           "type": "array",
           "items": { "$ref": "#/$defs/tagRef" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ambiguousCandidate": {
+      "type": "object",
+      "required": ["external_id", "title"],
+      "properties": {
+        "external_id": { "type": "string" },
+        "title": { "type": "string" },
+        "page_count": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "searchAmbiguous": {
+      "type": "object",
+      "required": ["query", "candidates"],
+      "properties": {
+        "query": { "type": "string" },
+        "candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ambiguousCandidate" }
         }
       },
       "additionalProperties": false

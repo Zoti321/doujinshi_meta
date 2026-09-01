@@ -69,6 +69,7 @@ class ComicTagsItem:
     external_id: str
     title: str
     tags: list[TagRef]
+    page_count: int | None = None
 
 
 @dataclass
@@ -111,7 +112,27 @@ class FetchTagsResponse:
     errors: list[FetchError] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {
+            "schema_version": self.schema_version,
+            "command": self.command,
+            "source": self.source,
+            "generated_at": self.generated_at,
+            "items": [_comic_tags_item_dict(item) for item in self.items],
+            "errors": [asdict(err) for err in self.errors],
+        }
+
+
+@dataclass
+class AmbiguousCandidate:
+    external_id: str
+    title: str
+    page_count: int | None = None
+
+
+@dataclass
+class SearchAmbiguous:
+    query: str
+    candidates: list[AmbiguousCandidate]
 
 
 @dataclass
@@ -124,10 +145,103 @@ class SearchTagsResponse:
     generated_at: str = ""
     items: list[ComicTagsItem] = field(default_factory=list)
     errors: list[FetchError] = field(default_factory=list)
+    ambiguous: list[SearchAmbiguous] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {
+            "schema_version": self.schema_version,
+            "command": self.command,
+            "source": self.source,
+            "query": self.query,
+            "total_hits": self.total_hits,
+            "generated_at": self.generated_at,
+            "items": [_comic_tags_item_dict(item) for item in self.items],
+            "errors": [asdict(err) for err in self.errors],
+            "ambiguous": [_search_ambiguous_dict(entry) for entry in self.ambiguous],
+        }
+
+
+@dataclass
+class BatchScrapeItem(ComicTagsItem):
+    local_id: str = ""
+
+
+@dataclass
+class BatchAmbiguous:
+    local_id: str
+    title: str
+    candidates: list[AmbiguousCandidate]
+
+
+@dataclass
+class BatchError:
+    local_id: str
+    message: str
+
+
+@dataclass
+class SearchBatchResponse:
+    schema_version: str = "1.0"
+    command: str = "search-batch"
+    source: str = ""
+    generated_at: str = ""
+    items: list[BatchScrapeItem] = field(default_factory=list)
+    ambiguous: list[BatchAmbiguous] = field(default_factory=list)
+    errors: list[BatchError] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "command": self.command,
+            "source": self.source,
+            "generated_at": self.generated_at,
+            "items": [_batch_scrape_item_dict(item) for item in self.items],
+            "ambiguous": [_batch_ambiguous_dict(entry) for entry in self.ambiguous],
+            "errors": [asdict(err) for err in self.errors],
+        }
 
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _comic_tags_item_dict(item: ComicTagsItem) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "external_id": item.external_id,
+        "title": item.title,
+        "tags": [asdict(tag) for tag in item.tags],
+    }
+    if item.page_count is not None:
+        data["page_count"] = item.page_count
+    return data
+
+
+def _ambiguous_candidate_dict(candidate: AmbiguousCandidate) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "external_id": candidate.external_id,
+        "title": candidate.title,
+    }
+    if candidate.page_count is not None:
+        data["page_count"] = candidate.page_count
+    return data
+
+
+def _search_ambiguous_dict(entry: SearchAmbiguous) -> dict[str, Any]:
+    return {
+        "query": entry.query,
+        "candidates": [_ambiguous_candidate_dict(c) for c in entry.candidates],
+    }
+
+
+def _batch_scrape_item_dict(item: BatchScrapeItem) -> dict[str, Any]:
+    data = _comic_tags_item_dict(item)
+    data["local_id"] = item.local_id
+    return data
+
+
+def _batch_ambiguous_dict(entry: BatchAmbiguous) -> dict[str, Any]:
+    return {
+        "local_id": entry.local_id,
+        "title": entry.title,
+        "candidates": [_ambiguous_candidate_dict(c) for c in entry.candidates],
+    }

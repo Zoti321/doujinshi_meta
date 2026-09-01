@@ -17,7 +17,7 @@ def _item(comic_id: str, title: str = "title") -> ComicTagsItem:
 
 
 def test_search_tags_jmcomic_returns_items_and_total_hits() -> None:
-    hits = [("1", "a"), ("2", "b"), ("3", "c")]
+    hits = [("1", "a", None), ("2", "b", None), ("3", "c", None)]
 
     with (
         patch("doujinshi_meta.search.create_jmcomic_client", return_value=MagicMock()),
@@ -40,7 +40,7 @@ def test_search_tags_jmcomic_returns_items_and_total_hits() -> None:
 
 
 def test_search_tags_limit_truncates_fetch_calls() -> None:
-    hits = [(str(i), f"t{i}") for i in range(20)]
+    hits = [(str(i), f"t{i}", None) for i in range(20)]
 
     with (
         patch("doujinshi_meta.search.create_jmcomic_client", return_value=MagicMock()),
@@ -70,7 +70,7 @@ def test_search_tags_empty_results() -> None:
 
 
 def test_search_tags_detail_failure_records_error() -> None:
-    hits = [("ok", "a"), ("bad", "b"), ("ok2", "c")]
+    hits = [("ok", "a", None), ("bad", "b", None), ("ok2", "c", None)]
 
     def fetch_side_effect(_client, cid: str) -> ComicTagsItem:
         if cid == "bad":
@@ -91,7 +91,7 @@ def test_search_tags_detail_failure_records_error() -> None:
 
 
 def test_search_tags_bika_uses_bika_ops() -> None:
-    hits = [("bika-1", "title")]
+    hits = [("bika-1", "title", 24)]
 
     with (
         patch("doujinshi_meta.search.open_bika_client") as mock_open,
@@ -112,7 +112,7 @@ def test_search_tags_bika_uses_bika_ops() -> None:
 
 
 def test_search_tags_delay_sleeps_between_fetches() -> None:
-    hits = [("1", "a"), ("2", "b"), ("3", "c")]
+    hits = [("1", "a", None), ("2", "b", None), ("3", "c", None)]
 
     with (
         patch("doujinshi_meta.search.create_jmcomic_client", return_value=MagicMock()),

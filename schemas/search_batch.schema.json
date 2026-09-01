@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doujinshi-meta.local/schemas/search_batch.schema.json",
+  "title": "SearchBatchResponse",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "command",
+    "source",
+    "generated_at",
+    "items",
+    "ambiguous",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "command": { "type": "string", "const": "search-batch" },
+    "source": { "enum": ["bika", "jmcomic"] },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/batchScrapeItem" }
+    },
+    "ambiguous": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/batchAmbiguous" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/batchError" }
+    }
+  },
+  "$defs": {
+    "tagRef": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": { "enum": ["tag", "parody", "character", "author"] },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "batchScrapeItem": {
+      "type": "object",
+      "required": ["local_id", "external_id", "title", "tags"],
+      "properties": {
+        "local_id": { "type": "string" },
+        "external_id": { "type": "string" },
+        "title": { "type": "string" },
+        "page_count": { "type": "integer", "minimum": 1 },
+        "tags": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tagRef" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "ambiguousCandidate": {
+      "type": "object",
+      "required": ["external_id", "title"],
+      "properties": {
+        "external_id": { "type": "string" },
+        "title": { "type": "string" },
+        "page_count": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "batchAmbiguous": {
+      "type": "object",
+      "required": ["local_id", "title", "candidates"],
+      "properties": {
+        "local_id": { "type": "string" },
+        "title": { "type": "string" },
+        "candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ambiguousCandidate" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "batchError": {
+      "type": "object",
+      "required": ["local_id", "message"],
+      "properties": {
+        "local_id": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

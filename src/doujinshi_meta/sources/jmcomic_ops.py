@@ -51,18 +51,31 @@ def extract_tags_jmcomic(album) -> list[TagRef]:
     return tags
 
 
+def _album_page_count(album) -> int | None:
+    raw = getattr(album, "page_count", None)
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def fetch_comic_jmcomic(client, album_id: str) -> ComicTagsItem:
     album = client.get_album_detail(album_id)
     return ComicTagsItem(
         external_id=str(album.album_id),
         title=album.name or "",
         tags=extract_tags_jmcomic(album),
+        page_count=_album_page_count(album),
     )
 
 
-def search_comics_jmcomic(client, keyword: str) -> tuple[list[tuple[str, str]], int]:
+def search_comics_jmcomic(
+    client, keyword: str
+) -> tuple[list[tuple[str, str, int | None]], int]:
     page = client.search_site(keyword, page=1)
-    hits = [(str(album_id), title) for album_id, title in page.iter_id_title()]
+    hits = [(str(album_id), title, None) for album_id, title in page.iter_id_title()]
     total_raw = getattr(page, "total", None)
     total_hits = int(total_raw) if total_raw is not None else len(hits)
     return hits, total_hits

@@ -55,28 +55,41 @@ def extract_tags_bika(comic: dict) -> list[TagRef]:
     return tags
 
 
+def _bika_page_count(comic: dict) -> int | None:
+    raw = comic.get("pagesCount")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def fetch_comic_bika(client: BikaClient, comic_id: str) -> ComicTagsItem:
     comic = client.get_comic(comic_id)
     return ComicTagsItem(
         external_id=comic["_id"],
         title=comic.get("title") or "",
         tags=extract_tags_bika(comic),
+        page_count=_bika_page_count(comic),
     )
 
 
-def search_comics_bika(client: BikaClient, keyword: str) -> tuple[list[tuple[str, str]], int]:
+def search_comics_bika(
+    client: BikaClient, keyword: str
+) -> tuple[list[tuple[str, str, int | None]], int]:
     result = client.search_comics_page(keyword, page=1)
     docs = result.get("docs") or []
     total_raw = result.get("total")
     total_hits = int(total_raw) if total_raw is not None else len(docs)
-    hits: list[tuple[str, str]] = []
+    hits: list[tuple[str, str, int | None]] = []
     for doc in docs:
         if not isinstance(doc, dict):
             continue
         comic_id = doc.get("_id")
         if not comic_id:
             continue
-        hits.append((str(comic_id), doc.get("title") or ""))
+        hits.append((str(comic_id), doc.get("title") or "", _bika_page_count(doc)))
     return hits, total_hits
 
 

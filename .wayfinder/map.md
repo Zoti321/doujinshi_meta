@@ -31,6 +31,7 @@ status: open
 - [代理与哔咔凭证本地管理方案](tickets/007-grilling-credentials-proxy.md) — 哔咔环境变量；**默认直连**；`djm config` / `--proxy` 手动启用代理
 - [项目重命名为 doujinshi-meta](tickets/011-rename-doujinshi-meta.md) — 发行名/包/`djm`；配置目录与 `DJM_*`；0.2.0 双轨兼容（已关闭）
 - [移除 dtg / DTG_* 遗留兼容](tickets/012-remove-legacy-dtg-naming.md) — 0.3.0 删除 CLI 别名、旧 env、doujinshi-tag-getter 自动迁移
+- [本地本子批量刮削与页数消歧](map-local-scrape.md) — `search --pages` + `search-batch`；见 tickets/019–020
 
 ## Not yet specified
 

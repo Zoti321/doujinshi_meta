@@ -9,6 +9,7 @@
 | **1. 构建 tag 词表** | `djm catalog --source {bika\|jmcomic}` | 去重 tag 列表 + 出现次数 |
 | **2. 爬取本子 tag（按 ID）** | `djm fetch --source … --ids id1,id2` | 每本漫画的 tag 列表（不落库） |
 | **3. 按标题搜索本子** | `djm search --source … "关键词"` | 搜索命中 + 每本 tag 列表 |
+| **4. 批量按标题搜索** | `djm search-batch --source … --input books.jsonl` | 本地本子批量刮削结果 |
 
 持久化由**调用方**负责（Flutter 写本地 DB、缓存 JSON 等）；本工具只负责爬取与序列化。
 
@@ -126,13 +127,15 @@ v1 按 **source 分词表**，不做跨站合并。
     {
       "external_id": "410090",
       "title": "[禁漫漢化組] … CRYOGENIC DREAMER …",
+      "page_count": 42,
       "tags": [
         { "kind": "tag", "name": "全彩" },
         { "kind": "parody", "name": "原神" }
       ]
     }
   ],
-  "errors": []
+  "errors": [],
+  "ambiguous": []
 }
 ```
 
@@ -140,10 +143,55 @@ v1 按 **source 分词表**，不做跨站合并。
 |------|------|------|
 | `query` | string | 用户输入的搜索词 |
 | `total_hits` | int | 来源站报告的总命中数（第 1 页搜索） |
-| `items[]` | 同 fetch | 已拉详情的本子 |
+| `items[]` | 同 fetch | 已拉详情的本子；含可选 `page_count` |
 | `errors[]` | 同 fetch | 详情阶段失败的本子 |
+| `ambiguous[]` | object[] | 使用 `--pages` 且无法唯一消歧时的候选列表 |
 
 无结果时 `items=[]`、`total_hits=0`，不写入 `errors`。
+
+使用 **`--pages N`** 时启用页数消歧：在扫描候选（受 `--limit` 约束）中选 `|page_count − N|` 最小者；成功时 `items[]` 通常仅 1 条；平局或无页数数据时 `items=[]` 且 `ambiguous[]` 列出候选。
+
+---
+
+## 功能 4：`SearchBatchResponse`
+
+批量刮削本地本子；输入 JSONL，每行至少 `local_id` + `title`，可选 `pages` 用于消歧。
+
+```json
+{
+  "schema_version": "1.0",
+  "command": "search-batch",
+  "source": "jmcomic",
+  "generated_at": "2026-09-01T06:00:00Z",
+  "items": [
+    {
+      "local_id": "abc",
+      "external_id": "410090",
+      "title": "示例标题",
+      "page_count": 42,
+      "tags": [{ "kind": "tag", "name": "全彩" }]
+    }
+  ],
+  "ambiguous": [
+    {
+      "local_id": "xyz",
+      "title": "模糊标题",
+      "candidates": [
+        { "external_id": "1", "title": "候选 A", "page_count": 40 }
+      ]
+    }
+  ],
+  "errors": [
+    { "local_id": "bad-line", "message": "缺少 title" }
+  ]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `items[]` | object[] | 成功刮削的本地本子；含 `local_id` |
+| `ambiguous[]` | object[] | 无法唯一消歧的本地本子 |
+| `errors[]` | object[] | 行级或刮削失败；含 `local_id` |
 
 ---
 
@@ -170,7 +218,11 @@ djm fetch --source bika --ids-file ids.txt
 
 # 功能 3：按标题/关键词搜索
 djm search --source jmcomic "CRYOGENIC DREAMER"
+djm search --source jmcomic "CRYOGENIC DREAMER" --pages 42
 djm search --source bika "关键词" --limit 5 -o results.json
+
+# 功能 4：批量按标题搜索（系列级/库级本地刮削）
+djm search-batch --source jmcomic --input books.jsonl
 
 # 通用（默认直连，不设代理）
 djm catalog --source jmcomic
@@ -207,7 +259,7 @@ djm --no-proxy catalog --source bika
 供非 CLI 场景或测试使用：
 
 ```python
-from doujinshi_meta import build_catalog, fetch_tags, search_tags
+from doujinshi_meta import build_catalog, fetch_tags, search_batch_tags, search_tags
 from doujinshi_meta.models import Source
 
 catalog = build_catalog(Source.JMCOMIC)  # 默认直连
@@ -217,8 +269,11 @@ catalog = build_catalog(Source.JMCOMIC, proxy="http://127.0.0.1:7890")
 result = fetch_tags(Source.BIKA, ["id1", "id2"], proxy=...)
 # result.items: list[ComicTagsItem]
 
-search = search_tags("关键词", Source.JMCOMIC, limit=10, proxy=...)
-# search.items: list[ComicTagsItem]; search.query, search.total_hits
+search = search_tags("关键词", Source.JMCOMIC, limit=10, pages=42, proxy=...)
+# search.items / search.ambiguous
+
+batch = search_batch_tags("books.jsonl", Source.JMCOMIC, proxy=...)
+# batch.items: list[BatchScrapeItem]
 ```
 
 Flutter **不直接 import Python**；推荐通过 **CLI 子进程** 或 **预生成 JSON 文件** 集成。
@@ -253,7 +308,7 @@ final items = json['items'] as List;
 
 ### JSON Schema
 
-实现时提供 `schemas/tag_catalog.schema.json`、`schemas/fetch_tags.schema.json` 与 `schemas/search_tags.schema.json`，便于 `quicktype` / `json_serializable` 生成 Dart model。
+实现时提供 `schemas/tag_catalog.schema.json`、`schemas/fetch_tags.schema.json`、`schemas/search_tags.schema.json` 与 `schemas/search_batch.schema.json`，便于 `quicktype` / `json_serializable` 生成 Dart model。
 
 ---
 
