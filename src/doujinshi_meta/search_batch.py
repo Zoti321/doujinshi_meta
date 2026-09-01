@@ -11,11 +11,12 @@ from doujinshi_meta.models import (
     BatchError,
     BatchScrapeItem,
     SearchBatchResponse,
+    SearchTagsResponse,
     Source,
     utc_now_iso,
 )
-from doujinshi_meta.search import search_tags
-from doujinshi_meta.sources.session import DEFAULT_DELAY
+from doujinshi_meta.search import search_tags_with_session
+from doujinshi_meta.sources.session import DEFAULT_DELAY, open_source_session
 
 
 def _log(stderr: TextIO, message: str) -> None:
@@ -50,6 +51,45 @@ def _validate_batch_row(payload: dict[str, Any], line_no: int) -> BatchError | N
     return None
 
 
+def _append_batch_result(
+    response: SearchBatchResponse,
+    *,
+    local_id: str,
+    title: str,
+    result: SearchTagsResponse,
+) -> None:
+    if result.items:
+        item = result.items[0]
+        response.items.append(
+            BatchScrapeItem(
+                local_id=local_id,
+                external_id=item.external_id,
+                title=item.title,
+                tags=item.tags,
+                page_count=item.page_count,
+            )
+        )
+        return
+
+    if result.ambiguous:
+        response.ambiguous.append(
+            BatchAmbiguous(
+                local_id=local_id,
+                title=title,
+                candidates=result.ambiguous[0].candidates,
+            )
+        )
+        return
+
+    if result.errors:
+        response.errors.append(
+            BatchError(local_id=local_id, message=result.errors[0].message)
+        )
+        return
+
+    response.errors.append(BatchError(local_id=local_id, message="无匹配结果"))
+
+
 def search_batch_tags(
     input_path: Path | str,
     source: Source | str,
@@ -71,75 +111,58 @@ def search_batch_tags(
 
     lines = path.read_text(encoding="utf-8").splitlines()
     valid_rows = 0
+    session = None
 
-    for line_no, raw_line in enumerate(lines, start=1):
-        payload, parse_error = _parse_batch_line(raw_line, line_no)
-        if parse_error is not None:
-            response.errors.append(parse_error)
-            continue
-        if payload is None:
-            continue
+    try:
+        for line_no, raw_line in enumerate(lines, start=1):
+            payload, parse_error = _parse_batch_line(raw_line, line_no)
+            if parse_error is not None:
+                response.errors.append(parse_error)
+                continue
+            if payload is None:
+                continue
 
-        row_error = _validate_batch_row(payload, line_no)
-        if row_error is not None:
-            response.errors.append(row_error)
-            continue
+            row_error = _validate_batch_row(payload, line_no)
+            if row_error is not None:
+                response.errors.append(row_error)
+                continue
 
-        valid_rows += 1
-        local_id = str(payload["local_id"]).strip()
-        title = str(payload["title"]).strip()
-        pages_raw = payload.get("pages")
-        pages = int(pages_raw) if pages_raw is not None else None
+            valid_rows += 1
+            local_id = str(payload["local_id"]).strip()
+            title = str(payload["title"]).strip()
+            pages_raw = payload.get("pages")
+            pages = int(pages_raw) if pages_raw is not None else None
 
-        if valid_rows > 1:
-            time.sleep(wait)
-
-        _log(err_stream, f"[search-batch] {local_id!r} {title!r}")
-        try:
-            result = search_tags(
-                title,
-                src,
-                limit=limit,
-                pages=pages,
-                proxy=proxy,
-                delay=0,
-                stderr=err_stream,
-                credentials_path=credentials_path,
-            )
-        except RuntimeError as exc:
-            response.errors.append(BatchError(local_id=local_id, message=str(exc)))
-            continue
-
-        if result.items:
-            item = result.items[0]
-            response.items.append(
-                BatchScrapeItem(
-                    local_id=local_id,
-                    external_id=item.external_id,
-                    title=item.title,
-                    tags=item.tags,
-                    page_count=item.page_count,
+            if session is None:
+                session = open_source_session(
+                    src, proxy=proxy, credentials_path=credentials_path
                 )
-            )
-            continue
+            elif wait:
+                time.sleep(wait)
 
-        if result.ambiguous:
-            response.ambiguous.append(
-                BatchAmbiguous(
-                    local_id=local_id,
-                    title=title,
-                    candidates=result.ambiguous[0].candidates,
+            _log(err_stream, f"[search-batch] {local_id!r} {title!r}")
+            try:
+                result = search_tags_with_session(
+                    session,
+                    title,
+                    limit=limit,
+                    pages=pages,
+                    delay=0,
+                    stderr=err_stream,
                 )
-            )
-            continue
+            except RuntimeError as exc:
+                response.errors.append(BatchError(local_id=local_id, message=str(exc)))
+                continue
 
-        if result.errors:
-            response.errors.append(
-                BatchError(local_id=local_id, message=result.errors[0].message)
+            _append_batch_result(
+                response,
+                local_id=local_id,
+                title=title,
+                result=result,
             )
-            continue
-
-        response.errors.append(BatchError(local_id=local_id, message="无匹配结果"))
+    finally:
+        if session is not None:
+            session.close()
 
     if valid_rows == 0:
         raise RuntimeError("输入文件无有效行")

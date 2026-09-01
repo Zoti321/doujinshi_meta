@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from doujinshi_meta.models import (
     AmbiguousCandidate,
@@ -55,7 +55,7 @@ def test_search_batch_tags_mixed_rows(tmp_path: Path) -> None:
         "\n".join(
             [
                 '{"local_id":"ok","title":"Good","pages":42}',
-                '{"local_id":"ambig","title":"Tie"}',
+                '{"local_id":"ambig","title":"Tie","pages":42}',
                 '{"local_id":"bad","title":"Broken"}',
                 "not json",
             ]
@@ -63,7 +63,7 @@ def test_search_batch_tags_mixed_rows(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    def side_effect(title: str, *_args, **_kwargs) -> SearchTagsResponse:
+    def side_effect(_session, title: str, **_kwargs) -> SearchTagsResponse:
         if title == "Good":
             return _search_result()
         if title == "Tie":
@@ -76,9 +76,14 @@ def test_search_batch_tags_mixed_rows(tmp_path: Path) -> None:
             items=[],
         )
 
-    with patch("doujinshi_meta.search_batch.search_tags", side_effect=side_effect):
+    with (
+        patch("doujinshi_meta.search_batch.open_source_session") as mock_open,
+        patch("doujinshi_meta.search_batch.search_tags_with_session", side_effect=side_effect),
+    ):
+        mock_open.return_value = MagicMock()
         result = search_batch_tags(input_path, "jmcomic", delay=0)
 
+    mock_open.assert_called_once()
     assert result.command == "search-batch"
     assert len(result.items) == 1
     assert result.items[0].local_id == "ok"
@@ -94,11 +99,15 @@ def test_search_batch_tags_empty_valid_rows_raises(tmp_path: Path) -> None:
     input_path = tmp_path / "empty.jsonl"
     input_path.write_text("# comment only\n", encoding="utf-8")
 
-    with patch("doujinshi_meta.search_batch.search_tags") as mock_search:
+    with (
+        patch("doujinshi_meta.search_batch.open_source_session") as mock_open,
+        patch("doujinshi_meta.search_batch.search_tags_with_session") as mock_search,
+    ):
         try:
             search_batch_tags(input_path, "jmcomic", delay=0)
         except RuntimeError as exc:
             assert "无有效行" in str(exc)
         else:
             raise AssertionError("expected RuntimeError")
+        mock_open.assert_not_called()
         mock_search.assert_not_called()

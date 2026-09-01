@@ -15,12 +15,14 @@ class FakeSourceSession:
         hits: list[SearchCandidate] | None = None,
         total: int | None = None,
         fetch_fn: Callable[[str], ComicTagsItem] | None = None,
+        search_fn: Callable[[str], tuple[list[SearchCandidate], int]] | None = None,
         comic_ids: list[str] | None = None,
     ) -> None:
         self.source = source
         self._hits = hits or []
         self._total = total if total is not None else len(self._hits)
         self._fetch_fn = fetch_fn
+        self._search_fn = search_fn
         self._comic_ids = comic_ids or []
         self.closed = False
         self.search_calls: list[str] = []
@@ -28,6 +30,8 @@ class FakeSourceSession:
 
     def search(self, keyword: str) -> tuple[list[SearchCandidate], int]:
         self.search_calls.append(keyword)
+        if self._search_fn is not None:
+            return self._search_fn(keyword)
         return self._hits, self._total
 
     def fetch_comic(self, external_id: str) -> ComicTagsItem:

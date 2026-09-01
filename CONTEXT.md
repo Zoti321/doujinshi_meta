@@ -59,7 +59,7 @@ _Avoid_: 表格输出、pretty 输出（作契约名）
 - **全量（catalog）**：枚举本子 → 内存聚合 tag 词表 → 输出 JSON
 - **按需（fetch）**：指定 ID → 输出每本 tag 列表 JSON
 - **按标题搜索（search）**：标题或关键词 → 来源站搜索 → 对命中本子拉详情 → 输出 `SearchTagsResponse` JSON
-- **批量按标题搜索（search-batch）**：多本**本地本子**（标题 ± 页数）→ 逐本 search → 输出 `SearchBatchResponse` JSON
+- **批量按标题搜索（search-batch）**：多本**本地本子**（标题 ± 页数）→ 单次打开 SourceSession → 逐本 search → 输出 `SearchBatchResponse` JSON
 
 ## 本地本子（Local Book）
 
