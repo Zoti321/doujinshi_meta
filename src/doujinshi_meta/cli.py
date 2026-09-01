@@ -23,6 +23,7 @@ from doujinshi_meta.config import (
     save_config,
 )
 from doujinshi_meta.fetch import fetch_tags
+from doujinshi_meta.search import search_tags
 from doujinshi_meta.models import Source, TagCatalogResponse, normalize_kinds, validate_kinds_for_source
 
 app = typer.Typer(no_args_is_help=True, add_completion=False, name="djm")
@@ -113,6 +114,43 @@ def fetch_cmd(
         result = fetch_tags(
             Source(source.value),
             id_list,
+            proxy=_resolved_proxy(proxy, no_proxy, config),
+            delay=delay,
+            credentials_path=_credentials_path(config),
+        )
+    except RuntimeError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+
+    _write_json(result.to_dict(), output)
+    if result.errors and not result.items:
+        raise typer.Exit(code=2)
+    if result.errors:
+        raise typer.Exit(code=1)
+
+
+@app.command("search")
+def search_cmd(
+    query: str = typer.Argument(..., help="标题或关键词"),
+    source: SourceOption = typer.Option(..., "--source", help="来源站"),
+    limit: int = typer.Option(10, "--limit", min=1, help="最多拉取详情的本子数"),
+    output: Optional[Path] = typer.Option(None, "-o", "--output", help="写入 JSON 文件"),
+    proxy: Optional[str] = typer.Option(None, "--proxy", help="单次 HTTP 代理"),
+    no_proxy: bool = typer.Option(False, "--no-proxy", help="强制直连"),
+    delay: Optional[float] = typer.Option(None, "--delay", help="详情请求间隔（秒）"),
+    config: Optional[Path] = typer.Option(None, "--config", help="配置文件路径"),
+) -> None:
+    """按标题或关键词搜索本子并爬取元数据。"""
+    trimmed = query.strip()
+    if not trimmed:
+        typer.echo("请提供搜索关键词", err=True)
+        raise typer.Exit(code=2)
+
+    try:
+        result = search_tags(
+            trimmed,
+            Source(source.value),
+            limit=limit,
             proxy=_resolved_proxy(proxy, no_proxy, config),
             delay=delay,
             credentials_path=_credentials_path(config),

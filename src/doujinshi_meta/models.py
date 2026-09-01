@@ -114,5 +114,20 @@ class FetchTagsResponse:
         return asdict(self)
 
 
+@dataclass
+class SearchTagsResponse:
+    schema_version: str = "1.0"
+    command: str = "search"
+    source: str = ""
+    query: str = ""
+    total_hits: int = 0
+    generated_at: str = ""
+    items: list[ComicTagsItem] = field(default_factory=list)
+    errors: list[FetchError] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")

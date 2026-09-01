@@ -64,6 +64,22 @@ def fetch_comic_bika(client: BikaClient, comic_id: str) -> ComicTagsItem:
     )
 
 
+def search_comics_bika(client: BikaClient, keyword: str) -> tuple[list[tuple[str, str]], int]:
+    result = client.search_comics_page(keyword, page=1)
+    docs = result.get("docs") or []
+    total_raw = result.get("total")
+    total_hits = int(total_raw) if total_raw is not None else len(docs)
+    hits: list[tuple[str, str]] = []
+    for doc in docs:
+        if not isinstance(doc, dict):
+            continue
+        comic_id = doc.get("_id")
+        if not comic_id:
+            continue
+        hits.append((str(comic_id), doc.get("title") or ""))
+    return hits, total_hits
+
+
 def iter_comic_ids_bika(client: BikaClient) -> Iterator[str]:
     categories = client.list_categories()
     seen: set[str] = set()

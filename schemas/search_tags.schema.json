@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://doujinshi-meta.local/schemas/search_tags.schema.json",
+  "title": "SearchTagsResponse",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "command",
+    "source",
+    "query",
+    "total_hits",
+    "generated_at",
+    "items",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "command": { "type": "string", "const": "search" },
+    "source": { "enum": ["bika", "jmcomic"] },
+    "query": { "type": "string" },
+    "total_hits": { "type": "integer", "minimum": 0 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/comicTagsItem" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fetchError" }
+    }
+  },
+  "$defs": {
+    "tagRef": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": { "enum": ["tag", "parody", "character", "author"] },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "comicTagsItem": {
+      "type": "object",
+      "required": ["external_id", "title", "tags"],
+      "properties": {
+        "external_id": { "type": "string" },
+        "title": { "type": "string" },
+        "tags": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tagRef" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "fetchError": {
+      "type": "object",
+      "required": ["external_id", "message"],
+      "properties": {
+        "external_id": { "type": "string" },
+        "message": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

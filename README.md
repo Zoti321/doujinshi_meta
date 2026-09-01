@@ -25,6 +25,9 @@ uv run djm --help
 # 禁漫：单个/批量本子元数据（含 tag）
 uv run djm fetch --source jmcomic --ids 410090
 
+# 禁漫：按标题/关键词搜索
+uv run djm search --source jmcomic "CRYOGENIC DREAMER"
+
 # 禁漫：构建 tag 词表（耗时长，建议 --checkpoint）
 uv run djm catalog --source jmcomic --limit 10
 

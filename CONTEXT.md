@@ -39,6 +39,7 @@ _Avoid_: 爬取类型（作领域名）、维度过滤（含糊）
 
 - `TagCatalogResponse` — 功能 1
 - `FetchTagsResponse` — 功能 2（单本/批量 tag，由调用方决定是否缓存）
+- `SearchTagsResponse` — 功能 3（按标题搜索）
 
 ## 表格视图（Table View）
 
@@ -52,10 +53,16 @@ _Avoid_: 表格输出、pretty 输出（作契约名）
 - **Python 库**：同结构 API，供脚本或测试使用
 - **静态 JSON 文件**：CI 生成词表后放入 Flutter `assets`
 
-## 全量爬取 / 按需爬取
+## 全量爬取 / 按需爬取 / 按标题搜索
 
 - **全量（catalog）**：枚举本子 → 内存聚合 tag 词表 → 输出 JSON
 - **按需（fetch）**：指定 ID → 输出每本 tag 列表 JSON
+- **按标题搜索（search）**：标题或关键词 → 来源站搜索 → 对命中本子拉详情 → 输出 `SearchTagsResponse` JSON
+
+## SearchTagsResponse（按标题搜索输出）
+
+按标题搜索命令的 JSON 契约。`items[]` / `errors[]` 与 `FetchTagsResponse` 同形；另含 `query`、`total_hits` 等搜索元字段。`command` 为 `"search"`。
+_Avoid_: 与 `FetchTagsResponse` 混称；列表页不完整 tags 当作最终输出
 
 ## 哔咔：用户凭证（User Credentials）
 

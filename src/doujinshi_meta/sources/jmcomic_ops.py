@@ -60,6 +60,14 @@ def fetch_comic_jmcomic(client, album_id: str) -> ComicTagsItem:
     )
 
 
+def search_comics_jmcomic(client, keyword: str) -> tuple[list[tuple[str, str]], int]:
+    page = client.search_site(keyword, page=1)
+    hits = [(str(album_id), title) for album_id, title in page.iter_id_title()]
+    total_raw = getattr(page, "total", None)
+    total_hits = int(total_raw) if total_raw is not None else len(hits)
+    return hits, total_hits
+
+
 def iter_comic_ids_jmcomic(client) -> Iterator[str]:
     seen: set[str] = set()
     for category in JMCOMIC_CATEGORIES:

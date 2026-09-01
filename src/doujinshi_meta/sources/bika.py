@@ -158,3 +158,28 @@ class BikaClient:
         if isinstance(data.get("comics"), dict):
             return data["comics"]
         return data
+
+    def search_comics_page(
+        self,
+        keyword: str,
+        page: int = 1,
+        *,
+        sort: str = "ua",
+        categories: list[str] | None = None,
+    ) -> dict[str, Any]:
+        if not self._token:
+            self.login()
+        path = f"comics/advanced-search?page={page}"
+        data = self._request(
+            "POST",
+            path,
+            json={
+                "keyword": keyword,
+                "sort": sort,
+                "categories": categories or [],
+            },
+        )
+        comics = data.get("comics")
+        if isinstance(comics, dict):
+            return comics
+        return data

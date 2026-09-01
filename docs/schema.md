@@ -2,12 +2,13 @@
 
 > 修订：无数据库、无 album 持久化；CLI **stdout 输出 JSON**；可被 Flutter 等项目集成。
 
-## 两大功能
+## 三大功能
 
-| 功能 | CLI 命令（草案） | 输出 |
-|------|------------------|------|
+| 功能 | CLI 命令 | 输出 |
+|------|----------|------|
 | **1. 构建 tag 词表** | `djm catalog --source {bika\|jmcomic}` | 去重 tag 列表 + 出现次数 |
-| **2. 爬取本子 tag** | `djm fetch --source … --ids id1,id2` | 每本漫画的 tag 列表（不落库） |
+| **2. 爬取本子 tag（按 ID）** | `djm fetch --source … --ids id1,id2` | 每本漫画的 tag 列表（不落库） |
+| **3. 按标题搜索本子** | `djm search --source … "关键词"` | 搜索命中 + 每本 tag 列表 |
 
 持久化由**调用方**负责（Flutter 写本地 DB、缓存 JSON 等）；本工具只负责爬取与序列化。
 
@@ -109,6 +110,43 @@ v1 按 **source 分词表**，不做跨站合并。
 
 ---
 
+## 功能 3：`SearchTagsResponse`
+
+按标题或关键词搜索；对前 `--limit` 条（默认 10）拉取完整 tags。内部 **search → detail**（列表页 tags 不完整）。
+
+```json
+{
+  "schema_version": "1.0",
+  "command": "search",
+  "source": "jmcomic",
+  "query": "CRYOGENIC",
+  "total_hits": 12,
+  "generated_at": "2026-09-01T06:00:00Z",
+  "items": [
+    {
+      "external_id": "410090",
+      "title": "[禁漫漢化組] … CRYOGENIC DREAMER …",
+      "tags": [
+        { "kind": "tag", "name": "全彩" },
+        { "kind": "parody", "name": "原神" }
+      ]
+    }
+  ],
+  "errors": []
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `query` | string | 用户输入的搜索词 |
+| `total_hits` | int | 来源站报告的总命中数（第 1 页搜索） |
+| `items[]` | 同 fetch | 已拉详情的本子 |
+| `errors[]` | 同 fetch | 详情阶段失败的本子 |
+
+无结果时 `items=[]`、`total_hits=0`，不写入 `errors`。
+
+---
+
 ## CLI 约定
 
 ```bash
@@ -130,6 +168,10 @@ djm catalog --source jmcomic --table   # 人类可读表格；默认 JSON 为集
 djm fetch --source jmcomic --ids 410090,427413
 djm fetch --source bika --ids-file ids.txt
 
+# 功能 3：按标题/关键词搜索
+djm search --source jmcomic "CRYOGENIC DREAMER"
+djm search --source bika "关键词" --limit 5 -o results.json
+
 # 通用（默认直连，不设代理）
 djm catalog --source jmcomic
 
@@ -149,6 +191,7 @@ djm --no-proxy catalog --source bika
 |------|------|
 | `-o, --output` | 写文件；省略则 stdout |
 | `--kind` | （仅 `catalog`）可重复；仅聚合/输出指定 Tag Kind；默认全部；仍爬取全部本子详情 |
+| `--limit` | （`catalog` 测试 / `search`）catalog 最多处理本子数；search 最多拉详情条数（默认 10） |
 | `--table` | （仅 `catalog`）stdout 打印 `kind`/`name`/`count` 表格；与 `-o` 互斥；**非** JSON 契约 |
 | `--proxy` | 单次 HTTP 代理 URL；默认不使用代理 |
 | `--no-proxy` | 强制直连，忽略 `config.toml` / `DJM_PROXY` |
@@ -164,7 +207,7 @@ djm --no-proxy catalog --source bika
 供非 CLI 场景或测试使用：
 
 ```python
-from doujinshi_meta import build_catalog, fetch_tags
+from doujinshi_meta import build_catalog, fetch_tags, search_tags
 from doujinshi_meta.models import Source
 
 catalog = build_catalog(Source.JMCOMIC)  # 默认直连
@@ -173,6 +216,9 @@ catalog = build_catalog(Source.JMCOMIC, proxy="http://127.0.0.1:7890")
 
 result = fetch_tags(Source.BIKA, ["id1", "id2"], proxy=...)
 # result.items: list[ComicTagsItem]
+
+search = search_tags("关键词", Source.JMCOMIC, limit=10, proxy=...)
+# search.items: list[ComicTagsItem]; search.query, search.total_hits
 ```
 
 Flutter **不直接 import Python**；推荐通过 **CLI 子进程** 或 **预生成 JSON 文件** 集成。
@@ -207,7 +253,7 @@ final items = json['items'] as List;
 
 ### JSON Schema
 
-实现时提供 `schemas/tag_catalog.schema.json` 与 `schemas/fetch_tags.schema.json`，便于 `quicktype` / `json_serializable` 生成 Dart model。
+实现时提供 `schemas/tag_catalog.schema.json`、`schemas/fetch_tags.schema.json` 与 `schemas/search_tags.schema.json`，便于 `quicktype` / `json_serializable` 生成 Dart model。
 
 ---
 
@@ -216,6 +262,7 @@ final items = json['items'] as List;
 | 项 | 策略 |
 |----|------|
 | 全量枚举 | 哔咔：分类分页；禁漫：`categories_filter_gen` |
+| 标题搜索 | 哔咔：`POST /comics/advanced-search`；禁漫：`search_site` → 详情 N+1 |
 | 聚合 | 内存 `dict[(kind,name)] += 1`；可选 `--checkpoint FILE` 写进度（**非 tag 库**，仅续爬） |
 | 限速 | 哔咔 ~1 req/s；禁漫低并发 |
 | 错误 | 记入 response `errors[]`，不中断整批（fetch） |
@@ -239,6 +286,7 @@ doujinshi-meta/          # uv 项目（pyproject.toml）
     cli.py                     # djm 入口
     catalog.py                 # 功能 1
     fetch.py                   # 功能 2
+    search.py                  # 功能 3
     models.py                  # dataclass ↔ JSON
     sources/bika.py, jmcomic.py
   schemas/*.schema.json        # Flutter / 其他语言代码生成
