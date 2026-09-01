@@ -36,6 +36,7 @@ uv run djm catalog --source jmcomic --limit 10 --table
 
 # 哔咔：可直接运行；无环境变量时会提示输入账号密码（成功后自动保存）
 uv run djm fetch --source bika --ids YOUR_COMIC_ID
+uv run djm search --source bika "关键词"
 
 # 或预先设置环境变量（适合 CI / 脚本）
 export DJM_BIKA_ACCOUNT=...

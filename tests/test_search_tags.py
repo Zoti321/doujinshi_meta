@@ -109,3 +109,22 @@ def test_search_tags_bika_uses_bika_ops() -> None:
     assert len(result.items) == 1
     mock_search.assert_called_once_with(mock_client, "q")
     mock_fetch.assert_called_once_with(mock_client, "bika-1")
+
+
+def test_search_tags_delay_sleeps_between_fetches() -> None:
+    hits = [("1", "a"), ("2", "b"), ("3", "c")]
+
+    with (
+        patch("doujinshi_meta.search.create_jmcomic_client", return_value=MagicMock()),
+        patch("doujinshi_meta.search.search_comics_jmcomic", return_value=(hits, 3)),
+        patch(
+            "doujinshi_meta.search.fetch_comic_jmcomic",
+            side_effect=lambda _client, cid: _item(cid),
+        ),
+        patch("doujinshi_meta.search.time.sleep") as mock_sleep,
+    ):
+        search_tags("q", "jmcomic", limit=10, delay=0.5)
+
+    assert mock_sleep.call_count == 2
+    mock_sleep.assert_called_with(0.5)
+

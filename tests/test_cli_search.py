@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 from typer.testing import CliRunner
@@ -74,3 +75,29 @@ def test_search_all_errors_exit_2() -> None:
         result = runner.invoke(app, ["search", "--source", "jmcomic", "kw"])
 
     assert result.exit_code == 2
+
+
+def test_search_writes_output_file(tmp_path: Path) -> None:
+    out_path = tmp_path / "search.json"
+    with patch("doujinshi_meta.cli.search_tags", return_value=_sample_search()):
+        result = runner.invoke(
+            app,
+            ["search", "--source", "jmcomic", "keyword", "-o", str(out_path)],
+        )
+
+    assert result.exit_code == 0
+    assert not result.stdout.strip()
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert payload["command"] == "search"
+    assert payload["items"][0]["external_id"] == "410090"
+
+
+def test_search_runtime_error_exits_2() -> None:
+    with patch(
+        "doujinshi_meta.cli.search_tags",
+        side_effect=RuntimeError("network down"),
+    ):
+        result = runner.invoke(app, ["search", "--source", "jmcomic", "kw"])
+
+    assert result.exit_code == 2
+    assert "network down" in result.stderr
