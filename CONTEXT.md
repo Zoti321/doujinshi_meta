@@ -80,6 +80,8 @@ _Avoid_: 系列级 = parody Tag；库级 = Tag 词表 / catalog
 ## 页数消歧（Page Count Disambiguation）
 
 当标题搜索命中多条候选时，用调用方提供的**页数提示**（本地统计页数）选取 `|候选页数 − 提示页数|` 最小者。页数提示可选；未提供时行为与 v1 `search` 一致（对前 `--limit` 条拉详情）。
+
+搜索命中在内部归一为 **SearchCandidate**（`external_id` / `title` / `list_page_count`）；adapter 负责把来源站列表字段映射为 `list_page_count`，消歧规则集中在 `page_disambiguation` 模块，与 HTTP 解耦。
 _Avoid_: 页码（pagination）；相似度排序（本工具 v1 不做标题 fuzzy 匹配）
 
 ## 页数（Page Count）

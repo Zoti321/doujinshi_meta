@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Iterator
 
 from doujinshi_meta.models import ComicTagsItem, Source
-from doujinshi_meta.sources.session import SearchHit
+from doujinshi_meta.page_disambiguation import SearchCandidate
 
 
 class FakeSourceSession:
@@ -12,7 +12,7 @@ class FakeSourceSession:
         self,
         *,
         source: Source = Source.JMCOMIC,
-        hits: list[SearchHit] | None = None,
+        hits: list[SearchCandidate] | None = None,
         total: int | None = None,
         fetch_fn: Callable[[str], ComicTagsItem] | None = None,
         comic_ids: list[str] | None = None,
@@ -26,7 +26,7 @@ class FakeSourceSession:
         self.search_calls: list[str] = []
         self.fetch_calls: list[str] = []
 
-    def search(self, keyword: str) -> tuple[list[SearchHit], int]:
+    def search(self, keyword: str) -> tuple[list[SearchCandidate], int]:
         self.search_calls.append(keyword)
         return self._hits, self._total
 
@@ -41,3 +41,16 @@ class FakeSourceSession:
 
     def close(self) -> None:
         self.closed = True
+
+
+def search_candidate(
+    external_id: str,
+    title: str = "title",
+    *,
+    list_page_count: int | None = None,
+) -> SearchCandidate:
+    return SearchCandidate(
+        external_id=external_id,
+        title=title,
+        list_page_count=list_page_count,
+    )

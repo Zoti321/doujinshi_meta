@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TextIO
 
 from doujinshi_meta.models import (
-    AmbiguousCandidate,
     ComicTagsItem,
     FetchError,
     SearchAmbiguous,
@@ -15,7 +14,13 @@ from doujinshi_meta.models import (
     Source,
     utc_now_iso,
 )
-from doujinshi_meta.sources.session import DEFAULT_DELAY, SearchHit, open_source_session
+from doujinshi_meta.page_disambiguation import (
+    DisambiguationOutcome,
+    SearchCandidate,
+    decide_by_page_hint,
+    enrich_page_counts,
+)
+from doujinshi_meta.sources.session import DEFAULT_DELAY, open_source_session
 
 FetchOne = Callable[[str], ComicTagsItem]
 
@@ -24,76 +29,54 @@ def _log(stderr: TextIO, message: str) -> None:
     print(message, file=stderr)
 
 
-def _candidate_from_hit(hit: SearchHit) -> AmbiguousCandidate:
-    external_id, title, page_count = hit
-    return AmbiguousCandidate(
-        external_id=external_id,
-        title=title,
-        page_count=page_count,
-    )
-
-
 def _resolve_by_pages(
     query: str,
-    candidates: list[SearchHit],
+    candidates: list[SearchCandidate],
     hint_pages: int,
     fetch_one: FetchOne,
     *,
     wait: float,
     stderr: TextIO,
 ) -> tuple[list[ComicTagsItem], list[SearchAmbiguous], list[FetchError]]:
-    if not candidates:
-        return [], [], []
+    enriched, prefetched = enrich_page_counts(
+        candidates,
+        fetch_one,
+        wait=wait,
+        on_fetch_error=lambda external_id, exc: _log(
+            stderr, f"[search] skip {external_id}: {exc}"
+        ),
+    )
+    decision = decide_by_page_hint(enriched, hint_pages)
 
-    enriched: list[tuple[SearchHit, int | None]] = []
-    prefetched: dict[str, ComicTagsItem] = {}
-
-    for index, hit in enumerate(candidates):
-        external_id, title, list_page_count = hit
-        page_count = list_page_count
-        if page_count is None:
-            if index > 0:
-                time.sleep(wait)
-            try:
-                item = fetch_one(external_id)
-                prefetched[external_id] = item
-                page_count = item.page_count
-            except Exception as exc:
-                _log(stderr, f"[search] skip {external_id}: {exc}")
-        enriched.append(((external_id, title, list_page_count), page_count))
-
-    with_pages = [(hit, page_count) for hit, page_count in enriched if page_count is not None]
-    if not with_pages:
+    if decision.outcome == DisambiguationOutcome.NO_PAGE_DATA:
         ambiguous = SearchAmbiguous(
             query=query,
-            candidates=[_candidate_from_hit(hit) for hit, _ in enriched],
+            candidates=[c.to_ambiguous_candidate() for c in decision.all_candidates],
         )
         return [], [ambiguous], []
 
-    min_diff = min(abs(page_count - hint_pages) for _, page_count in with_pages)
-    winners = [hit for hit, page_count in with_pages if abs(page_count - hint_pages) == min_diff]
-
-    if len(winners) > 1:
+    if decision.outcome == DisambiguationOutcome.AMBIGUOUS:
         ambiguous = SearchAmbiguous(
             query=query,
-            candidates=[_candidate_from_hit(hit) for hit in winners],
+            candidates=[c.to_ambiguous_candidate() for c in decision.tied],
         )
         return [], [ambiguous], []
 
-    winner_id = winners[0][0]
-    if winner_id in prefetched:
-        return [prefetched[winner_id]], [], []
+    winner = decision.winner
+    assert winner is not None
+    if winner.external_id in prefetched:
+        return [prefetched[winner.external_id]], [], []
 
     try:
-        item = fetch_one(winner_id)
+        item = fetch_one(winner.external_id)
         return [item], [], []
     except Exception as exc:
-        _log(stderr, f"[search] error {winner_id}: {exc}")
-        return [], [], [FetchError(external_id=winner_id, message=str(exc))]
+        _log(stderr, f"[search] error {winner.external_id}: {exc}")
+        return [], [], [FetchError(external_id=winner.external_id, message=str(exc))]
 
 
 def _fetch_hits_without_pages(
-    hits: list[SearchHit],
+    candidates: list[SearchCandidate],
     limit: int,
     fetch_one: FetchOne,
     *,
@@ -103,10 +86,10 @@ def _fetch_hits_without_pages(
     items: list[ComicTagsItem] = []
     errors: list[FetchError] = []
 
-    for index, (comic_id, _title, _page_count) in enumerate(hits):
+    for index, candidate in enumerate(candidates):
         if index > 0:
             time.sleep(wait)
-        comic_id = comic_id.strip()
+        comic_id = candidate.external_id.strip()
         if not comic_id:
             continue
         try:
@@ -142,15 +125,15 @@ def search_tags(
     session = open_source_session(src, proxy=proxy, credentials_path=credentials_path)
 
     try:
-        hits, total_hits = session.search(query)
+        candidates, total_hits = session.search(query)
         response.total_hits = total_hits
-        _log(err_stream, f"[search] {len(hits)} hits (total {total_hits}) for {query!r}")
+        _log(err_stream, f"[search] {len(candidates)} hits (total {total_hits}) for {query!r}")
 
         fetch_one = session.fetch_comic
-        scan_hits = hits[:limit]
+        scan_candidates = candidates[:limit]
         if pages is None:
             items, errors = _fetch_hits_without_pages(
-                scan_hits,
+                scan_candidates,
                 limit,
                 fetch_one,
                 wait=wait,
@@ -161,7 +144,7 @@ def search_tags(
         else:
             items, ambiguous, errors = _resolve_by_pages(
                 query,
-                scan_hits,
+                scan_candidates,
                 pages,
                 fetch_one,
                 wait=wait,

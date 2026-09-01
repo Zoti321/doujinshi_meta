@@ -5,6 +5,7 @@ from typing import Iterator
 from jmcomic import JmMagicConstants, JmOption
 
 from doujinshi_meta.models import ComicTagsItem, TagKind, TagRef
+from doujinshi_meta.page_disambiguation import SearchCandidate
 
 JMCOMIC_CATEGORIES = [
     JmMagicConstants.CATEGORY_ALL,
@@ -73,9 +74,12 @@ def fetch_comic_jmcomic(client, album_id: str) -> ComicTagsItem:
 
 def search_comics_jmcomic(
     client, keyword: str
-) -> tuple[list[tuple[str, str, int | None]], int]:
+) -> tuple[list[SearchCandidate], int]:
     page = client.search_site(keyword, page=1)
-    hits = [(str(album_id), title, None) for album_id, title in page.iter_id_title()]
+    hits = [
+        SearchCandidate(external_id=str(album_id), title=title, list_page_count=None)
+        for album_id, title in page.iter_id_title()
+    ]
     total_raw = getattr(page, "total", None)
     total_hits = int(total_raw) if total_raw is not None else len(hits)
     return hits, total_hits

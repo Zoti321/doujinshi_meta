@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterator, Protocol
 
 from doujinshi_meta.models import ComicTagsItem, Source
+from doujinshi_meta.page_disambiguation import SearchCandidate
 from doujinshi_meta.sources.bika import BikaClient
 from doujinshi_meta.sources.bika_ops import (
     fetch_comic_bika,
@@ -19,8 +20,6 @@ from doujinshi_meta.sources.jmcomic_ops import (
     search_comics_jmcomic,
 )
 
-SearchHit = tuple[str, str, int | None]
-
 DEFAULT_DELAY: dict[Source, float] = {
     Source.BIKA: 1.5,
     Source.JMCOMIC: 0.4,
@@ -31,7 +30,7 @@ class SourceSession(Protocol):
     @property
     def source(self) -> Source: ...
 
-    def search(self, keyword: str) -> tuple[list[SearchHit], int]: ...
+    def search(self, keyword: str) -> tuple[list[SearchCandidate], int]: ...
 
     def fetch_comic(self, external_id: str) -> ComicTagsItem: ...
 
@@ -48,7 +47,7 @@ class BikaSourceSession:
     def source(self) -> Source:
         return Source.BIKA
 
-    def search(self, keyword: str) -> tuple[list[SearchHit], int]:
+    def search(self, keyword: str) -> tuple[list[SearchCandidate], int]:
         return search_comics_bika(self._client, keyword)
 
     def fetch_comic(self, external_id: str) -> ComicTagsItem:
@@ -69,7 +68,7 @@ class JmcomicSourceSession:
     def source(self) -> Source:
         return Source.JMCOMIC
 
-    def search(self, keyword: str) -> tuple[list[SearchHit], int]:
+    def search(self, keyword: str) -> tuple[list[SearchCandidate], int]:
         return search_comics_jmcomic(self._client, keyword)
 
     def fetch_comic(self, external_id: str) -> ComicTagsItem:

@@ -5,11 +5,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from doujinshi_meta.models import ComicTagsItem, Source, TagRef
+from doujinshi_meta.page_disambiguation import SearchCandidate
 from doujinshi_meta.sources.session import (
     BikaSourceSession,
     DEFAULT_DELAY,
     JmcomicSourceSession,
-    SearchHit,
     open_source_session,
 )
 
@@ -59,7 +59,7 @@ def test_open_source_session_bika() -> None:
 
 def test_jmcomic_session_search_and_fetch() -> None:
     client = MagicMock()
-    hits: list[SearchHit] = [("1", "a", None)]
+    hits: list[SearchCandidate] = [SearchCandidate("1", "a")]
     with (
         patch(
             "doujinshi_meta.sources.session.search_comics_jmcomic",
@@ -75,6 +75,7 @@ def test_jmcomic_session_search_and_fetch() -> None:
         item = session.fetch_comic("1")
 
     assert result_hits == hits
+    assert result_hits[0].external_id == "1"
     assert total == 99
     assert item.external_id == "1"
     mock_search.assert_called_once_with(client, "kw")

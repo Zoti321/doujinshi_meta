@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from doujinshi_meta.models import ComicTagsItem, Source, TagRef
 from doujinshi_meta.search import search_tags
-from tests.fake_session import FakeSourceSession
+from tests.fake_session import FakeSourceSession, search_candidate
 
 
 def _item(comic_id: str, title: str = "title") -> ComicTagsItem:
@@ -16,7 +16,11 @@ def _item(comic_id: str, title: str = "title") -> ComicTagsItem:
 
 
 def test_search_tags_jmcomic_returns_items_and_total_hits() -> None:
-    hits = [("1", "a", None), ("2", "b", None), ("3", "c", None)]
+    hits = [
+        search_candidate("1", "a"),
+        search_candidate("2", "b"),
+        search_candidate("3", "c"),
+    ]
     fake = FakeSourceSession(
         hits=hits,
         total=42,
@@ -38,7 +42,7 @@ def test_search_tags_jmcomic_returns_items_and_total_hits() -> None:
 
 
 def test_search_tags_limit_truncates_fetch_calls() -> None:
-    hits = [(str(i), f"t{i}", None) for i in range(20)]
+    hits = [search_candidate(str(i), f"t{i}") for i in range(20)]
     fake = FakeSourceSession(hits=hits, total=20, fetch_fn=lambda cid: _item(cid))
 
     with patch("doujinshi_meta.search.open_source_session", return_value=fake):
@@ -61,7 +65,11 @@ def test_search_tags_empty_results() -> None:
 
 
 def test_search_tags_detail_failure_records_error() -> None:
-    hits = [("ok", "a", None), ("bad", "b", None), ("ok2", "c", None)]
+    hits = [
+        search_candidate("ok", "a"),
+        search_candidate("bad", "b"),
+        search_candidate("ok2", "c"),
+    ]
 
     def fetch_side_effect(cid: str) -> ComicTagsItem:
         if cid == "bad":
@@ -80,7 +88,7 @@ def test_search_tags_detail_failure_records_error() -> None:
 
 
 def test_search_tags_bika_uses_session() -> None:
-    hits = [("bika-1", "title", 24)]
+    hits = [search_candidate("bika-1", "title", list_page_count=24)]
     fake = FakeSourceSession(
         source=Source.BIKA,
         hits=hits,
@@ -99,7 +107,11 @@ def test_search_tags_bika_uses_session() -> None:
 
 
 def test_search_tags_delay_sleeps_between_fetches() -> None:
-    hits = [("1", "a", None), ("2", "b", None), ("3", "c", None)]
+    hits = [
+        search_candidate("1", "a"),
+        search_candidate("2", "b"),
+        search_candidate("3", "c"),
+    ]
     fake = FakeSourceSession(hits=hits, total=3, fetch_fn=lambda cid: _item(cid))
 
     with (

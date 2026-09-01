@@ -9,6 +9,7 @@ from doujinshi_meta.config import (
     save_bika_credentials,
 )
 from doujinshi_meta.models import ComicTagsItem, TagKind, TagRef
+from doujinshi_meta.page_disambiguation import SearchCandidate
 from doujinshi_meta.sources.bika import BikaClient
 
 
@@ -77,19 +78,25 @@ def fetch_comic_bika(client: BikaClient, comic_id: str) -> ComicTagsItem:
 
 def search_comics_bika(
     client: BikaClient, keyword: str
-) -> tuple[list[tuple[str, str, int | None]], int]:
+) -> tuple[list[SearchCandidate], int]:
     result = client.search_comics_page(keyword, page=1)
     docs = result.get("docs") or []
     total_raw = result.get("total")
     total_hits = int(total_raw) if total_raw is not None else len(docs)
-    hits: list[tuple[str, str, int | None]] = []
+    hits: list[SearchCandidate] = []
     for doc in docs:
         if not isinstance(doc, dict):
             continue
         comic_id = doc.get("_id")
         if not comic_id:
             continue
-        hits.append((str(comic_id), doc.get("title") or "", _bika_page_count(doc)))
+        hits.append(
+            SearchCandidate(
+                external_id=str(comic_id),
+                title=doc.get("title") or "",
+                list_page_count=_bika_page_count(doc),
+            )
+        )
     return hits, total_hits
 
 
