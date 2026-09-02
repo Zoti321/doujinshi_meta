@@ -56,4 +56,4 @@ uv run djm config unset proxy
 uv run djm config unset bika-credentials
 ```
 
-文档：[`docs/schema.md`](docs/schema.md) · [`docs/credentials.md`](docs/credentials.md)
+文档：[`docs/integration.md`](docs/integration.md)（**对接集成**）· [`docs/schema.md`](docs/schema.md) · [`docs/credentials.md`](docs/credentials.md)
