@@ -10,6 +10,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from doujinshi_meta._version import __version__
 from doujinshi_meta.catalog import build_catalog
 from doujinshi_meta.config import (
     UserConfig,
@@ -30,6 +31,25 @@ from doujinshi_meta.models import Source, TagCatalogResponse, normalize_kinds, v
 app = typer.Typer(no_args_is_help=True, add_completion=False, name="djm")
 config_app = typer.Typer(no_args_is_help=True, help="持久配置")
 app.add_typer(config_app, name="config")
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+@app.callback()
+def _main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=_version_callback,
+        is_eager=True,
+        help="显示版本号并退出",
+    ),
+) -> None:
+    """本子元数据爬取 CLI。"""
 
 
 def run() -> None:

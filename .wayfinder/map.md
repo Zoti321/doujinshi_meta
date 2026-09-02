@@ -32,11 +32,12 @@ status: open
 - [项目重命名为 doujinshi-meta](tickets/011-rename-doujinshi-meta.md) — 发行名/包/`djm`；配置目录与 `DJM_*`；0.2.0 双轨兼容（已关闭）
 - [移除 dtg / DTG_* 遗留兼容](tickets/012-remove-legacy-dtg-naming.md) — 0.3.0 删除 CLI 别名、旧 env、doujinshi-tag-getter 自动迁移
 - [本地本子批量刮削与页数消歧](map-local-scrape.md) — `search --pages` + `search-batch`；见 tickets/019–020
+- [打包脚本与 Windows 分发产物](tickets/021-packaging-distribution-scripts.md) — Nuitka onefile + wheel + GitHub Release；见 ADR 0003
 
 ## Not yet specified
 
 - Tag 跨站别名（v1 不做）
-- standalone 二进制打包（Flutter 移动端无 Python 时）
+- macOS / Linux / 移动端 Standalone 二进制（v1 仅 Windows x64）
 
 ## 地图状态
 
@@ -64,3 +65,9 @@ status: open
 | [catalog 命令按 Tag Kind 过滤词表](tickets/010-catalog-kind-filter.md) | task | closed | — |
 | [项目重命名为 doujinshi-meta（本子元数据爬取）](tickets/011-rename-doujinshi-meta.md) | task | closed | — |
 | [移除 dtg / DTG_* 与 doujinshi-tag-getter 遗留兼容（0.3.0）](tickets/012-remove-legacy-dtg-naming.md) | task | closed | — |
+| [打包脚本与 Windows 分发产物（Nuitka + wheel + GitHub Release）](tickets/021-packaging-distribution-scripts.md) | task | open | — |
+| [→ CLI 版本标识](tickets/022-packaging-cli-version.md) | task | closed | — |
+| [→ 本地 Nuitka 二进制与 manifest](tickets/023-packaging-nuitka-binary-manifest.md) | task | open | 022 |
+| [→ 构建脚本扩展](tickets/024-packaging-build-script-extensions.md) | task | open | 023 |
+| [→ GitHub Release CI](tickets/025-packaging-github-release-ci.md) | task | open | 024 |
+| [→ 分发与集成文档](tickets/026-packaging-integration-docs.md) | task | open | 025 |
