@@ -54,6 +54,21 @@ _Avoid_: 表格输出、pretty 输出（作契约名）
 - **Python 库**：同结构 API，供脚本或测试使用
 - **静态 JSON 文件**：CI 生成词表后放入 Flutter `assets`
 
+## 集成宿主（Integration Host）
+
+调用 `djm` 或消费其 JSON 契约的外部项目（Flutter App、Electron、脚本、CI 流水线等）。持久化与 UI 由宿主负责；本工具只交付元数据。
+_Avoid_: 宿主应用（过长）、客户端（易与哔咔客户端常量混淆）
+
+## 分发产物（Distribution Artifact）
+
+构建脚本产出的、可供集成宿主使用的交付物：如 **Standalone 二进制**、`wheel`、`sdist`。产物元数据（版本、平台、校验和）写入 **`manifest.json`**，供宿主构建期校验与缓存。
+_Avoid_: 安装包（易与 `pip install` 混淆）、发布包（含糊）
+
+## Standalone 二进制
+
+不依赖宿主安装 Python 的 `djm` 可执行文件（v1 目标：**Windows x64**，由 **Nuitka** 编译）。集成宿主通过子进程调用；配置与凭证仍走用户目录或环境变量，与源码安装行为一致。
+_Avoid_: 绿色版、便携版（非领域术语）
+
 ## 全量爬取 / 按需爬取 / 按标题搜索
 
 - **全量（catalog）**：枚举本子 → 内存聚合 tag 词表 → 输出 JSON
