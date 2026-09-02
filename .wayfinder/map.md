@@ -67,7 +67,7 @@ status: open
 | [移除 dtg / DTG_* 与 doujinshi-tag-getter 遗留兼容（0.3.0）](tickets/012-remove-legacy-dtg-naming.md) | task | closed | — |
 | [打包脚本与 Windows 分发产物（Nuitka + wheel + GitHub Release）](tickets/021-packaging-distribution-scripts.md) | task | open | — |
 | [→ CLI 版本标识](tickets/022-packaging-cli-version.md) | task | closed | — |
-| [→ 本地 Nuitka 二进制与 manifest](tickets/023-packaging-nuitka-binary-manifest.md) | task | open | 022 |
-| [→ 构建脚本扩展](tickets/024-packaging-build-script-extensions.md) | task | open | 023 |
+| [→ 本地 Nuitka 二进制与 manifest](tickets/023-packaging-nuitka-binary-manifest.md) | task | closed | — |
+| [→ 构建脚本扩展](tickets/024-packaging-build-script-extensions.md) | task | open | — |
 | [→ GitHub Release CI](tickets/025-packaging-github-release-ci.md) | task | open | 024 |
 | [→ 分发与集成文档](tickets/026-packaging-integration-docs.md) | task | open | 025 |

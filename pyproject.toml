@@ -26,5 +26,12 @@ packages = ["src/doujinshi_meta"]
 
 [dependency-groups]
 dev = [
+    "nuitka>=2.4",
     "pytest>=9.1.1",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: 需本地构建产物或真网环境",
+]
+addopts = "-m 'not integration'"
