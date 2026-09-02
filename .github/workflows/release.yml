@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Build distribution artifacts
+        run: uv run python scripts/build.py --wheel
+
+      - name: Read project version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(uv run python -c "import tomllib; print(tomllib.loads(open('pyproject.toml','rb').read())['project']['version'])")
+          echo "value=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate release tag matches project version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            EXPECTED="v${{ steps.version.outputs.value }}"
+            if [[ "${{ github.ref_name }}" != "$EXPECTED" ]]; then
+              echo "Tag ${{ github.ref_name }} 与 pyproject.toml 版本 v${{ steps.version.outputs.value }} 不一致" >&2
+              exit 1
+            fi
+          fi
+
+      - name: Smoke test binary
+        shell: bash
+        run: |
+          EXE="dist/djm-${{ steps.version.outputs.value }}-windows-x64/djm.exe"
+          test -f "$EXE"
+          OUT=$("$EXE" --version)
+          test "$OUT" = "${{ steps.version.outputs.value }}"
+          "$EXE" --help
+
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=v${{ steps.version.outputs.value }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          fail_on_unmatched_files: true
+          files: |
+            dist/djm-*-windows-x64.zip
+            dist/*.whl
+            dist/*.tar.gz
