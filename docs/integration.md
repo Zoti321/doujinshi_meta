@@ -37,7 +37,7 @@
 | **B. 静态 JSON** | 词表、离线资源 | CI/构建期跑 `catalog -o ...`，App 加载 assets |
 | **C. Python 库** | 同仓库脚本、自动化测试 | `import doujinshi_meta`，返回与 JSON 同结构的 dataclass |
 
-Flutter **不能**直接 import Python；桌面/移动端若走方式 A，需内置 Python 环境或后续打包 standalone 二进制。
+Flutter **不能**直接 import Python；桌面/移动端推荐方式 A 时使用 **Standalone 二进制**（Windows x64 `djm.exe`，见 [3.4 获取 Standalone 二进制](#34-获取-standalone-二进制)），或通过 `wheel` 在 Python 宿主内安装。
 
 ---
 
@@ -82,6 +82,72 @@ djm fetch --source bika --ids YOUR_COMIC_ID
 ```
 
 成功时 **stdout 为纯 JSON**（`ensure_ascii=False`，中文不转义），stderr 可能含进度日志（`search-batch`）。
+
+### 3.4 获取 Standalone 二进制
+
+面向**未安装 Python** 的集成宿主（Flutter 桌面、Electron 等），可从 **GitHub Release** 或本地 `dist/` 获取 **Standalone 二进制**（Nuitka 编译的 `djm.exe`，见 [`docs/adr/0003-nuitka-standalone-binary.md`](./adr/0003-nuitka-standalone-binary.md)）。
+
+#### 从 GitHub Release 下载
+
+push `v*` tag 后 CI 会发布以下 **分发产物**（详见 [`.github/workflows/release.yml`](../.github/workflows/release.yml)）：
+
+| 附件 | 用途 |
+|------|------|
+| `djm-{version}-windows-x64.zip` | 含 `djm.exe` + `manifest.json`；**推荐**给非 Python 宿主 |
+| `doujinshi_meta-{version}-py3-none-any.whl` | Python 宿主 `pip install`，无需 Nuitka |
+| `doujinshi_meta-{version}.tar.gz` | sdist；源码分发备用 |
+
+解压 zip 后目录结构与本地构建一致：
+
+```text
+djm.exe
+manifest.json
+```
+
+#### manifest 字段与 SHA256 校验
+
+同目录 `manifest.json` 供宿主**构建期**校验版本与完整性：
+
+| 字段 | 说明 |
+|------|------|
+| `name` | 包名，固定 `doujinshi-meta` |
+| `version` | 语义化版本，与 `djm --version` 一致 |
+| `platform` | v1 固定 `windows-x64` |
+| `artifact` | 固定 `djm.exe` |
+| `sha256` | `djm.exe` 的 SHA256 十六进制摘要 |
+| `built_at` | ISO 8601 构建时间（UTC） |
+
+集成方在拷贝/捆绑 `djm.exe` 前，应对本地文件计算 SHA256 并与 manifest 比对；不一致则拒绝使用或重新下载。
+
+```bash
+# 示例：PowerShell 校验（Release 解压目录内）
+$manifest = Get-Content manifest.json | ConvertFrom-Json
+$hash = (Get-FileHash djm.exe -Algorithm SHA256).Hash.ToLower()
+if ($hash -ne $manifest.sha256) { throw "checksum mismatch" }
+```
+
+#### Flutter 捆绑指引（指针）
+
+1. 构建脚本从 Release 下载 zip，校验 manifest 后解压 `djm.exe` 到 `native_assets/windows/`（或项目约定的 assets 路径）。
+2. 运行时 `Process.run` 调用**绝对路径**下的 `djm.exe`（勿假定 PATH 中有 `djm`）。
+3. frozen 二进制仍读写 `%APPDATA%\doujinshi-meta\` 配置与凭证，与源码安装行为一致；非交互场景请预设 `DJM_BIKA_*` / `DJM_PROXY` 环境变量（见第 6 节）。
+4. 子进程 JSON 解析与 [8.1 Flutter 示例](#81-flutterdart--cli-子进程) 相同，仅将 `executable` 换为捆绑路径。
+
+#### 本地 dist/ 验收（维护者或 CI 产物）
+
+维护者本地构建后，集成方亦可直接使用 `dist/` 输出做对接验收：
+
+```bash
+uv sync --all-groups
+uv run python scripts/build.py --wheel
+# 产物：dist/djm-{version}-windows-x64/djm.exe
+#       dist/djm-{version}-windows-x64/manifest.json
+#       dist/djm-{version}-windows-x64.zip
+dist/djm-0.3.0-windows-x64/djm.exe --version
+dist/djm-0.3.0-windows-x64/djm.exe --help
+```
+
+将 `{version}` 替换为 `pyproject.toml` 中当前版本。完整构建选项见 [`README.md`](../README.md#构建-standalone-二进制维护者)。
 
 ---
 
@@ -408,7 +474,8 @@ CLI 全局选项 `--delay`（秒）可覆盖默认间隔。
 
 | 文档 | 内容 |
 |------|------|
-| [`README.md`](../README.md) | 快速上手 |
+| [`README.md`](../README.md) | 快速上手、本地构建 |
+| [`docs/adr/0003-nuitka-standalone-binary.md`](./adr/0003-nuitka-standalone-binary.md) | Standalone 二进制选型（Nuitka） |
 | [`schema.md`](./schema.md) | 完整 JSON 契约与字段说明 |
 | [`credentials.md`](./credentials.md) | 凭证、代理、配置路径 |
 | [`CONTEXT.md`](../CONTEXT.md) | 领域词汇（本地本子、页数消歧等） |
